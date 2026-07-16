@@ -105,6 +105,7 @@ foreach ($members as $m) {
         'joined_at' => $m['joined_at'],
         'keys'      => 0,
         'collected' => 0,
+        'gross_fair'=> 0.0,
         'fair'      => 0.0,
     ];
 }
@@ -131,8 +132,10 @@ foreach ($kills as $k) {
     }
     $killSplitN[$k['id']] = count($present);
 
-    $per = $net / count($present);
+    $grossPer = $gross / count($present);
+    $per      = $net / count($present);
     foreach ($present as $mid) {
+        $byMember[$mid]['gross_fair'] += $grossPer;
         $byMember[$mid]['fair'] += $per;
     }
 }
@@ -309,7 +312,8 @@ if ($leaderName) {
                     <th>Membro</th>
                     <th>Chaves</th>
                     <th>Com as keys</th>
-                    <th>Cota</th>
+                    <th>Cota bruta</th>
+                    <th>Cota líquida (-10%)</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -323,6 +327,7 @@ if ($leaderName) {
                         </td>
                         <td><?= $info['keys'] ?></td>
                         <td class="gp" title="Valor líquido após 10% do G.E."><?= format_gp($info['collected']) ?></td>
+                        <td class="gp" title="<?= e(format_gp_full($info['gross_fair'])) ?>"><?= format_gp($info['gross_fair']) ?></td>
                         <td class="gp" title="<?= e(format_gp_full($info['fair'])) ?>"><?= format_gp($info['fair']) ?></td>
                     </tr>
                 <?php endforeach; ?>
