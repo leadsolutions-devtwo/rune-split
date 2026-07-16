@@ -180,13 +180,6 @@ if ($leaderName) {
     }
 }
 
-// detalhamento por pessoa: pra quem cada um paga / de quem cada um recebe
-$paysTo       = [];
-$receivesFrom = [];
-foreach ($transfers as $t) {
-    $paysTo[$t['from']][]       = $t;
-    $receivesFrom[$t['to']][]   = $t;
-}
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -317,7 +310,6 @@ foreach ($transfers as $t) {
                     <th>Chaves</th>
                     <th>Com as keys</th>
                     <th>Cota</th>
-                    <th>Movimentação</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -332,20 +324,6 @@ foreach ($transfers as $t) {
                         <td><?= $info['keys'] ?></td>
                         <td class="gp" title="Valor líquido após 10% do G.E."><?= format_gp($info['collected']) ?></td>
                         <td class="gp" title="<?= e(format_gp_full($info['fair'])) ?>"><?= format_gp($info['fair']) ?></td>
-                        <td>
-                            <?php if (!$leaderName): ?>
-                                <span class="muted">defina o líder</span>
-                            <?php elseif (empty($paysTo[$info['name']]) && empty($receivesFrom[$info['name']])): ?>
-                                <span class="muted">sem transferência</span>
-                            <?php else: ?>
-                                <?php foreach ($paysTo[$info['name']] ?? [] as $t): ?>
-                                    <span class="flow-line">→ envia <span class="gp"><?= format_gp($t['amount']) ?></span> para <strong><?= e($t['to']) ?></strong></span>
-                                <?php endforeach; ?>
-                                <?php foreach ($receivesFrom[$info['name']] ?? [] as $t): ?>
-                                    <span class="flow-line">← recebe <span class="gp"><?= format_gp($t['amount']) ?></span> de <strong><?= e($t['from']) ?></strong></span>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
