@@ -18,9 +18,10 @@ function db(): PDO
 
     if ($url !== '') {
         $p   = parse_url($url);
+        $host = str_replace('-pooler.', '.', $p['host'] ?? '');
         $dsn = sprintf(
             'pgsql:host=%s;port=%d;dbname=%s',
-            $p['host'],
+            $host,
             $p['port'] ?? 5432,
             ltrim($p['path'] ?? '', '/')
         );
