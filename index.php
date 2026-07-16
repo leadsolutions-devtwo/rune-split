@@ -85,7 +85,7 @@ $trips = $pdo->query(
 </head>
 <body>
 <div class="wrap">
-    <div class="credits-banner" title="o lendário criador do app 👑">✨ AGRADECEM AO MATHEUS WAIF ✨</div>
+    <div class="credits-banner" title="o lendário criador do app 👑">✨ AGRADEÇAM AO MATHEUS WAIF ✨</div>
     <header class="topbar">
         <h1>⚔️ Rune Split</h1>
         <p class="sub">Controle de loot keys e split das trips na Wilderness</p>

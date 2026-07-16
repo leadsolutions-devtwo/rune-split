@@ -173,7 +173,7 @@ foreach ($transfers as $t) {
 </head>
 <body>
 <div class="wrap">
-    <div class="credits-banner" title="o lendário criador do app 👑">✨ AGRADECEM AO MATHEUS WAIF ✨</div>
+    <div class="credits-banner" title="o lendário criador do app 👑">✨ AGRADEÇAM AO MATHEUS WAIF ✨</div>
     <header class="topbar">
         <p><a href="index.php">← todas as trips</a></p>
         <h1>⚔️ <?= e($trip['name']) ?></h1>
