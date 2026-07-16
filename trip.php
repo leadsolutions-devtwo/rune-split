@@ -194,6 +194,21 @@ if ($leaderName) {
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<aside class="rules-box" aria-label="Regras da divisão">
+    <div class="rules-box-title">📜 Como dividimos</div>
+    <ol>
+        <li>Registramos o valor <strong>bruto</strong> de cada key.</li>
+        <li>Descontamos <strong>10% da taxa do G.E.</strong></li>
+        <li>Quem pegou a key envia o valor líquido ao <strong>líder</strong>.</li>
+        <li>O líder divide o líquido entre todos que estavam na trip.</li>
+        <li>Quem entrar depois só participa dos próximos kills.</li>
+    </ol>
+    <div class="rules-example">
+        <span>Exemplo</span>
+        <strong>500K → 450K líquidos</strong>
+        <small>450K ÷ número de participantes</small>
+    </div>
+</aside>
 <div class="wrap">
     <div class="credits-banner" title="o lendário criador do app 👑">✨ AGRADEÇAM AO MATHEUS WAIF ✨</div>
     <header class="topbar">

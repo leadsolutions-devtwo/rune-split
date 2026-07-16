@@ -34,6 +34,75 @@ body {
     z-index: 3;
 }
 
+/* ---- lembrete lateral das regras do split ---- */
+.rules-box {
+    display: none;
+}
+
+@media (min-width: 1500px) {
+    .rules-box {
+        display: block;
+        position: fixed;
+        top: 120px;
+        right: 28px;
+        z-index: 3;
+        width: 250px;
+        padding: 18px;
+        background: linear-gradient(145deg, rgba(28, 21, 43, 0.78), rgba(15, 11, 25, 0.68));
+        border: 1px solid rgba(184, 149, 245, 0.32);
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 12px 38px rgba(0, 0, 0, 0.38), inset 0 0 24px rgba(139, 92, 246, 0.05);
+        color: var(--muted);
+        font-size: 0.82rem;
+    }
+
+    .rules-box-title {
+        color: var(--arcane);
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 1rem;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        margin-bottom: 12px;
+    }
+
+    .rules-box ol {
+        padding-left: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+    }
+
+    .rules-box li::marker {
+        color: var(--gold);
+        font-weight: 700;
+    }
+
+    .rules-box strong {
+        color: var(--text);
+    }
+
+    .rules-example {
+        margin-top: 15px;
+        padding: 11px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        border: 1px solid rgba(245, 197, 66, 0.25);
+        border-radius: 8px;
+        background: rgba(245, 197, 66, 0.05);
+    }
+
+    .rules-example span,
+    .rules-example small {
+        color: var(--muted);
+    }
+
+    .rules-example strong {
+        color: var(--gold);
+    }
+}
+
 a {
     color: var(--arcane);
     text-decoration: none;
