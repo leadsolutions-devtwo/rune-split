@@ -141,7 +141,7 @@ $trips = $pdo->query(
                     <th>Status</th>
                     <th>Membros</th>
                     <th>Kills</th>
-                    <th>Total</th>
+                    <th>Líquido (-10% G.E.)</th>
                     <th>Criada em</th>
                     <th></th>
                 </tr>
@@ -160,7 +160,7 @@ $trips = $pdo->query(
                         </td>
                         <td><?= (int)$t['member_count'] ?></td>
                         <td><?= (int)$t['kill_count'] ?></td>
-                        <td class="gp"><?= format_gp((int)$t['total']) ?></td>
+                        <td class="gp"><?= format_gp((int)round((int)$t['total'] * 0.9)) ?></td>
                         <td class="muted"><?= e($t['created_at']) ?></td>
                         <td>
                             <form method="post" onsubmit="return confirm('Apagar a trip &quot;<?= e($t['name']) ?>&quot; e todos os kills dela?')">

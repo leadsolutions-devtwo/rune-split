@@ -93,25 +93,32 @@ foreach ($members as $m) {
     }
 }
 
-// ---- resumo por membro + split justo por kill ----
-// cada kill é dividido só entre quem já estava na trip naquele momento
-$total    = 0;
+// ---- resumo por membro + split líquido centralizado no líder ----
+// desconta 10% do G.E.; cada kill é dividido só entre quem já estava na trip
+$geTaxRate = 0.10;
+$grossTotal = 0;
+$netTotal   = 0;
 $byMember = [];
 foreach ($members as $m) {
     $byMember[$m['id']] = [
         'name'      => $m['name'],
         'joined_at' => $m['joined_at'],
         'keys'      => 0,
-        'received'  => 0,
+        'collected' => 0,
         'fair'      => 0.0,
     ];
 }
 
 $killSplitN = [];
+$killNet    = [];
 foreach ($kills as $k) {
-    $total += (int)$k['value'];
+    $gross = (int)$k['value'];
+    $net   = (int)round($gross * (1 - $geTaxRate));
+    $grossTotal += $gross;
+    $netTotal += $net;
+    $killNet[$k['id']] = $net;
     $byMember[$k['member_id']]['keys']++;
-    $byMember[$k['member_id']]['received'] += (int)$k['value'];
+    $byMember[$k['member_id']]['collected'] += $net;
 
     $present = [];
     foreach ($members as $m) {
@@ -124,7 +131,7 @@ foreach ($kills as $k) {
     }
     $killSplitN[$k['id']] = count($present);
 
-    $per = (int)$k['value'] / count($present);
+    $per = $net / count($present);
     foreach ($present as $mid) {
         $byMember[$mid]['fair'] += $per;
     }
@@ -148,11 +155,30 @@ if (!$uniformShare) {
     rsort($lateShares);
 }
 
-$balances = [];
-foreach ($byMember as $info) {
-    $balances[$info['name']] = $info['received'] - $info['fair'];
+// Fluxo combinado: quem pegou a key manda o líquido ao líder; o líder distribui.
+$transfers = [];
+if ($leaderName) {
+    foreach ($byMember as $mid => $info) {
+        if ((int)$mid !== (int)($trip['leader_id'] ?? 0) && $info['collected'] >= 1) {
+            $transfers[] = [
+                'from'   => $info['name'],
+                'to'     => $leaderName,
+                'amount' => (int)round($info['collected']),
+                'stage'  => 'concentrate',
+            ];
+        }
+    }
+    foreach ($byMember as $mid => $info) {
+        if ((int)$mid !== (int)($trip['leader_id'] ?? 0) && $info['fair'] >= 1) {
+            $transfers[] = [
+                'from'   => $leaderName,
+                'to'     => $info['name'],
+                'amount' => (int)round($info['fair']),
+                'stage'  => 'distribute',
+            ];
+        }
+    }
 }
-$transfers = settle($balances);
 
 // detalhamento por pessoa: pra quem cada um paga / de quem cada um recebe
 $paysTo       = [];
@@ -230,8 +256,11 @@ foreach ($transfers as $t) {
 
     <section class="stats">
         <div class="stat">
-            <span class="stat-label">Loot total</span>
-            <span class="stat-value gp" title="<?= e(format_gp_full($total)) ?>"><?= format_gp($total) ?></span>
+            <span class="stat-label">Loot líquido</span>
+            <span class="stat-value gp" title="<?= e(format_gp_full($netTotal)) ?>"><?= format_gp($netTotal) ?></span>
+            <span class="stat-sub">
+                bruto <?= format_gp($grossTotal) ?> · taxa G.E. <?= format_gp($grossTotal - $netTotal) ?> (10%)
+            </span>
         </div>
         <div class="stat">
             <span class="stat-label">Cota por pessoa</span>
@@ -286,14 +315,13 @@ foreach ($transfers as $t) {
                 <tr>
                     <th>Membro</th>
                     <th>Chaves</th>
-                    <th>Recebeu</th>
+                    <th>Com as keys</th>
                     <th>Cota</th>
-                    <th>Saldo</th>
+                    <th>Movimentação</th>
                 </tr>
                 </thead>
                 <tbody>
-                <?php foreach ($byMember as $mid => $info):
-                    $bal = $info['received'] - $info['fair']; ?>
+                <?php foreach ($byMember as $mid => $info): ?>
                     <tr>
                         <td>
                             <?= (int)$mid === (int)($trip['leader_id'] ?? 0) ? '👑 ' : '' ?><?= e($info['name']) ?>
@@ -302,21 +330,20 @@ foreach ($transfers as $t) {
                             <?php endif; ?>
                         </td>
                         <td><?= $info['keys'] ?></td>
-                        <td class="gp" title="<?= e(format_gp_full($info['received'])) ?>"><?= format_gp($info['received']) ?></td>
+                        <td class="gp" title="Valor líquido após 10% do G.E."><?= format_gp($info['collected']) ?></td>
                         <td class="gp" title="<?= e(format_gp_full($info['fair'])) ?>"><?= format_gp($info['fair']) ?></td>
-                        <td title="<?= e(format_gp_full($bal)) ?>">
-                            <?php if ($bal >= 1): ?>
-                                <span class="neg">deve repassar <?= format_gp($bal) ?></span>
-                                <?php foreach ($paysTo[$info['name']] ?? [] as $t): ?>
-                                    <span class="flow-line">→ <span class="gp"><?= format_gp($t['amount']) ?></span> pra <strong><?= e($t['to']) ?></strong></span>
-                                <?php endforeach; ?>
-                            <?php elseif ($bal <= -1): ?>
-                                <span class="pos">recebe <?= format_gp(-$bal) ?></span>
-                                <?php foreach ($receivesFrom[$info['name']] ?? [] as $t): ?>
-                                    <span class="flow-line">← <span class="gp"><?= format_gp($t['amount']) ?></span> de <strong><?= e($t['from']) ?></strong></span>
-                                <?php endforeach; ?>
+                        <td>
+                            <?php if (!$leaderName): ?>
+                                <span class="muted">defina o líder</span>
+                            <?php elseif (empty($paysTo[$info['name']]) && empty($receivesFrom[$info['name']])): ?>
+                                <span class="muted">sem transferência</span>
                             <?php else: ?>
-                                <span class="muted">quites ✓</span>
+                                <?php foreach ($paysTo[$info['name']] ?? [] as $t): ?>
+                                    <span class="flow-line">→ envia <span class="gp"><?= format_gp($t['amount']) ?></span> para <strong><?= e($t['to']) ?></strong></span>
+                                <?php endforeach; ?>
+                                <?php foreach ($receivesFrom[$info['name']] ?? [] as $t): ?>
+                                    <span class="flow-line">← recebe <span class="gp"><?= format_gp($t['amount']) ?></span> de <strong><?= e($t['from']) ?></strong></span>
+                                <?php endforeach; ?>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -338,20 +365,23 @@ foreach ($transfers as $t) {
         <section class="card">
             <h2>💰 <?= $isClosed ? 'Acerto final' : 'Acerto do split' ?></h2>
             <?php if (!$kills): ?>
-                <p class="muted">Registra os kills que eu calculo quem paga quem.</p>
+                <p class="muted">Registra os kills que eu desconto 10% do G.E. e calculo o split.</p>
+            <?php elseif (!$leaderName): ?>
+                <p class="muted">Defina o líder para calcular a concentração e a distribuição do dinheiro.</p>
             <?php elseif (!$transfers): ?>
                 <p class="muted">Todo mundo quites — ninguém deve nada. 🎉</p>
             <?php else: ?>
                 <ul class="transfers">
                     <?php foreach ($transfers as $t): ?>
                         <li>
+                            <span class="muted"><?= $t['stage'] === 'concentrate' ? 'Concentrar:' : 'Distribuir:' ?></span>
                             <strong><?= e($t['from']) ?></strong> paga
                             <span class="gp" title="<?= e(format_gp_full($t['amount'])) ?>"><?= format_gp($t['amount']) ?></span>
                             para <strong><?= e($t['to']) ?></strong>
                         </li>
                     <?php endforeach; ?>
                 </ul>
-                <p class="hint">Menor número possível de transferências pra cada um ficar com a sua cota.</p>
+                <p class="hint">1º as keys líquidas vão para o líder · 2º o líder distribui as cotas.</p>
             <?php endif; ?>
         </section>
     </div>
@@ -365,7 +395,8 @@ foreach ($transfers as $t) {
                 <thead>
                 <tr>
                     <th>#</th>
-                    <th>Valor</th>
+                    <th>Bruto</th>
+                    <th>Líquido</th>
                     <th>Chave com</th>
                     <th>Split</th>
                     <th>Obs</th>
@@ -379,6 +410,7 @@ foreach ($transfers as $t) {
                     <tr>
                         <td class="muted"><?= $i-- ?></td>
                         <td class="gp" title="<?= e(format_gp_full((int)$k['value'])) ?>"><?= format_gp((int)$k['value']) ?></td>
+                        <td class="gp" title="Após taxa de 10% do G.E."><?= format_gp($killNet[$k['id']]) ?></td>
                         <td><?= e($k['member_name']) ?></td>
                         <td class="muted" title="Dividido entre quem estava na trip nesse momento">÷<?= $killSplitN[$k['id']] ?></td>
                         <td class="muted"><?= e($k['note']) ?></td>
