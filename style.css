@@ -682,19 +682,151 @@ tbody tr:hover {
 
 /* ---- responsive ---- */
 @media (max-width: 720px) {
+    body {
+        overflow-x: hidden;
+        background-attachment: scroll;
+    }
+
+    .wrap {
+        width: 100%;
+        padding: 16px 10px 40px;
+    }
+
+    .credits-banner {
+        font-size: 0.82rem;
+        letter-spacing: 1.5px;
+        line-height: 1.35;
+    }
+
+    .topbar {
+        margin-bottom: 16px;
+    }
+
+    .topbar h1 {
+        font-size: 1.55rem;
+        overflow-wrap: anywhere;
+    }
+
+    .topbar .sub {
+        line-height: 1.65;
+    }
+
+    .card {
+        padding: 14px;
+        margin-bottom: 14px;
+    }
+
     .kill-form {
         grid-template-columns: 1fr;
+        gap: 14px;
+        padding-bottom: 0;
+    }
+
+    .kill-form .hint {
+        position: static;
+        min-height: 1.2em;
+        white-space: normal;
+    }
+
+    .kill-form input[type="text"],
+    .kill-form select,
+    .kill-form .btn {
+        width: 100%;
+        height: auto;
     }
 
     .form-cols {
         grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .form-col {
+        padding: 13px;
     }
 
     .two-col {
         grid-template-columns: 1fr;
+        gap: 0;
     }
 
     .stats {
         grid-template-columns: 1fr;
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+
+    .stat {
+        padding: 11px 14px;
+    }
+
+    .stat-value {
+        font-size: 1.3rem;
+    }
+
+    .toolbar {
+        align-items: stretch;
+    }
+
+    .toolbar form,
+    .toolbar select,
+    .toolbar .btn {
+        width: 100%;
+    }
+
+    .inline-label {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .inline-form {
+        flex-direction: column;
+    }
+
+    .inline-form .btn {
+        width: 100%;
+        padding: 9px 16px;
+    }
+
+    table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap;
+    }
+
+    table thead,
+    table tbody {
+        min-width: 620px;
+    }
+
+    th,
+    td {
+        padding: 8px;
+    }
+
+    .transfers li {
+        line-height: 1.65;
+        overflow-wrap: anywhere;
+    }
+
+    .flow-line {
+        white-space: normal;
+    }
+
+    .btn.wide {
+        padding: 11px;
+    }
+}
+
+@media (max-width: 380px) {
+    .wrap {
+        padding-inline: 7px;
+    }
+
+    .card,
+    .form-col {
+        padding: 11px;
     }
 }
