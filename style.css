@@ -421,6 +421,13 @@ select:focus {
     box-shadow: 0 0 12px rgba(139, 92, 246, 0.3);
 }
 
+.btn:disabled {
+    cursor: wait;
+    opacity: 0.7;
+    transform: none;
+    filter: saturate(0.7);
+}
+
 .btn.primary {
     background: linear-gradient(160deg, #9d6ff5, #6d3fd6);
     border-color: #8b5cf6;

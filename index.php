@@ -2,6 +2,16 @@
 declare(strict_types=1);
 require __DIR__ . '/db.php';
 
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Lax',
+    'use_strict_mode' => true,
+]);
+
+if (empty($_SESSION['create_trip_token'])) {
+    $_SESSION['create_trip_token'] = bin2hex(random_bytes(32));
+}
+
 $pdo   = db();
 $error = null;
 
@@ -9,6 +19,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     if ($action === 'create_trip') {
+        $submittedToken = (string)($_POST['create_trip_token'] ?? '');
+        $expectedToken  = (string)($_SESSION['create_trip_token'] ?? '');
+        if ($submittedToken === '' || $expectedToken === '' || !hash_equals($expectedToken, $submittedToken)) {
+            redirect('index.php');
+        }
+        // Cada formulário só pode criar uma trip, mesmo com vários cliques simultâneos.
+        unset($_SESSION['create_trip_token']);
+
         $leader  = trim($_POST['leader'] ?? '');
         $name    = trim($_POST['name'] ?? '');
         $rawList = trim($_POST['members'] ?? '');
@@ -64,6 +82,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+if (empty($_SESSION['create_trip_token'])) {
+    $_SESSION['create_trip_token'] = bin2hex(random_bytes(32));
+}
+$createTripToken = $_SESSION['create_trip_token'];
+
 $trips = $pdo->query(
     "SELECT t.id, t.name, t.created_at, t.closed_at,
             (SELECT m.name FROM members m WHERE m.id = t.leader_id)          AS leader_name,
@@ -99,6 +122,7 @@ $trips = $pdo->query(
         <h2>Nova trip</h2>
         <form method="post" class="trip-form" novalidate>
             <input type="hidden" name="action" value="create_trip">
+            <input type="hidden" name="create_trip_token" value="<?= e($createTripToken) ?>">
             <div class="form-cols">
                 <div class="form-col">
                     <h3>👑 Líder &amp; trip</h3>
@@ -202,6 +226,10 @@ form.addEventListener('submit', (ev) => {
     if (bad) {
         ev.preventDefault();
         bad.focus();
+    } else {
+        const button = form.querySelector('button[type="submit"]');
+        button.disabled = true;
+        button.textContent = 'Criando...';
     }
 });
 
