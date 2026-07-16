@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+    <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#06040c"/>
+            <stop offset="0.45" stop-color="#140b1e"/>
+            <stop offset="0.75" stop-color="#241028"/>
+            <stop offset="0.92" stop-color="#3a1a10"/>
+            <stop offset="1" stop-color="#20100a"/>
+        </linearGradient>
+        <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#0b0609"/>
+            <stop offset="1" stop-color="#040204"/>
+        </linearGradient>
+        <radialGradient id="moonglow" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0" stop-color="#e8dfc8" stop-opacity="0.5"/>
+            <stop offset="0.4" stop-color="#c9b98f" stop-opacity="0.18"/>
+            <stop offset="1" stop-color="#c9b98f" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="vignette" cx="0.5" cy="0.45" r="0.75">
+            <stop offset="0" stop-color="#000" stop-opacity="0"/>
+            <stop offset="0.6" stop-color="#000" stop-opacity="0.08"/>
+            <stop offset="1" stop-color="#000" stop-opacity="0.62"/>
+        </radialGradient>
+        <filter id="fog" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="18"/>
+        </filter>
+    </defs>
+
+    <!-- céu -->
+    <rect width="1600" height="900" fill="url(#sky)"/>
+
+    <!-- estrelas -->
+    <g fill="#e8e2d0">
+        <circle cx="120" cy="90" r="1.6" opacity="0.7"/>
+        <circle cx="240" cy="150" r="1.1" opacity="0.5"/>
+        <circle cx="345" cy="60" r="1.4" opacity="0.6"/>
+        <circle cx="430" cy="200" r="1" opacity="0.4"/>
+        <circle cx="520" cy="110" r="1.7" opacity="0.75"/>
+        <circle cx="610" cy="55" r="1.1" opacity="0.5"/>
+        <circle cx="705" cy="170" r="1.3" opacity="0.55"/>
+        <circle cx="790" cy="90" r="1" opacity="0.45"/>
+        <circle cx="880" cy="220" r="1.5" opacity="0.6"/>
+        <circle cx="960" cy="65" r="1.2" opacity="0.55"/>
+        <circle cx="1050" cy="150" r="1" opacity="0.4"/>
+        <circle cx="1120" cy="70" r="1.6" opacity="0.7"/>
+        <circle cx="1420" cy="90" r="1.3" opacity="0.6"/>
+        <circle cx="1500" cy="180" r="1.1" opacity="0.5"/>
+        <circle cx="1555" cy="60" r="1.5" opacity="0.65"/>
+        <circle cx="70" cy="260" r="1.2" opacity="0.45"/>
+        <circle cx="185" cy="330" r="1" opacity="0.35"/>
+        <circle cx="620" cy="280" r="1.1" opacity="0.4"/>
+        <circle cx="900" cy="320" r="1" opacity="0.3"/>
+        <circle cx="1480" cy="290" r="1.2" opacity="0.4"/>
+    </g>
+
+    <!-- runas flutuando, bem sutis -->
+    <g stroke="#8a72a8" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.14">
+        <path d="M300,170 v62 M300,170 l26,17 M300,196 l26,17"/>
+        <path d="M690,235 l32,42 M722,235 l-32,42"/>
+        <path d="M1045,180 v-58 M1027,140 l18,-18 l18,18"/>
+        <path d="M480,320 v46 M480,320 l22,14 l-22,14"/>
+    </g>
+
+    <!-- lua -->
+    <circle cx="1230" cy="150" r="130" fill="url(#moonglow)"/>
+    <circle cx="1230" cy="150" r="48" fill="#d5cdb8"/>
+    <circle cx="1214" cy="138" r="9" fill="#c2b9a2" opacity="0.8"/>
+    <circle cx="1244" cy="165" r="6" fill="#c2b9a2" opacity="0.7"/>
+    <circle cx="1235" cy="128" r="4" fill="#c2b9a2" opacity="0.6"/>
+
+    <!-- brasa no horizonte (clima de wildy) -->
+    <ellipse cx="500" cy="545" rx="240" ry="55" fill="#571d10" opacity="0.2" filter="url(#fog)"/>
+
+    <!-- montanhas ao fundo -->
+    <polygon fill="#150c1c" points="0,480 90,400 180,450 260,380 340,440 430,390 520,455 610,400 700,450 800,385 890,445 980,405 1070,460 1160,410 1250,455 1340,395 1430,450 1520,415 1600,460 1600,900 0,900"/>
+
+    <!-- montanhas próximas -->
+    <polygon fill="#0d0713" points="0,560 120,480 230,540 330,470 450,545 560,490 680,555 790,500 900,560 1010,495 1120,555 1240,505 1360,560 1470,515 1600,565 1600,900 0,900"/>
+
+    <!-- torre em ruína -->
+    <path fill="#070410" d="M1280,565 L1280,405 L1294,405 L1294,383 L1312,383 L1312,405 L1332,405 L1332,376 L1350,376 L1350,405 L1370,405 L1370,565 Z"/>
+    <rect x="1316" y="470" width="14" height="22" rx="6" fill="#1c0f22"/>
+
+    <!-- árvore morta (esquerda) -->
+    <g stroke="#060409" fill="#060409" stroke-linecap="round">
+        <path d="M200,790 L216,790 L209,555 L204,555 Z"/>
+        <path d="M207,575 C185,540 160,528 138,505" stroke-width="6" fill="none"/>
+        <path d="M162,522 C150,505 145,492 140,478" stroke-width="4" fill="none"/>
+        <path d="M208,600 C232,565 255,555 272,532" stroke-width="6" fill="none"/>
+        <path d="M250,552 C262,538 268,525 271,512" stroke-width="4" fill="none"/>
+        <path d="M206,650 C188,628 176,622 162,610" stroke-width="5" fill="none"/>
+    </g>
+
+    <!-- árvore morta (direita, menor) -->
+    <g stroke="#050308" fill="#050308" stroke-linecap="round">
+        <path d="M1452,760 L1464,760 L1459,600 L1455,600 Z"/>
+        <path d="M1457,618 C1440,592 1424,584 1410,566" stroke-width="5" fill="none"/>
+        <path d="M1458,640 C1476,615 1492,608 1503,590" stroke-width="5" fill="none"/>
+    </g>
+
+    <!-- chão -->
+    <rect y="558" width="1600" height="342" fill="url(#ground)"/>
+
+    <!-- névoa -->
+    <g filter="url(#fog)">
+        <ellipse cx="400" cy="572" rx="300" ry="38" fill="#35284a" opacity="0.22"/>
+        <ellipse cx="900" cy="588" rx="360" ry="44" fill="#2a2038" opacity="0.24"/>
+        <ellipse cx="1320" cy="575" rx="280" ry="36" fill="#35284a" opacity="0.2"/>
+        <ellipse cx="650" cy="640" rx="420" ry="50" fill="#1f1830" opacity="0.28"/>
+        <ellipse cx="1150" cy="660" rx="380" ry="46" fill="#1f1830" opacity="0.25"/>
+    </g>
+
+    <!-- vinheta -->
+    <rect width="1600" height="900" fill="url(#vignette)"/>
+</svg>
