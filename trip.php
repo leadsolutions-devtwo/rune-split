@@ -198,9 +198,10 @@ if ($leaderName) {
     <div class="rules-box-title">📜 Como dividimos</div>
     <ol>
         <li>Registramos o valor <strong>bruto</strong> de cada key.</li>
-        <li>Descontamos <strong>10% da taxa do G.E.</strong></li>
-        <li>Quem pegou a key envia o valor líquido ao <strong>líder</strong>.</li>
-        <li>O líder divide o líquido entre todos que estavam na trip.</li>
+        <li>Cada pessoa vende no G.E. os itens das <strong>próprias keys</strong>.</li>
+        <li>Descontamos <strong>10% da taxa do G.E.</strong> do valor vendido.</li>
+        <li>Todos enviam o gold líquido das vendas ao <strong>líder</strong>.</li>
+        <li>O líder reúne tudo e faz o split entre quem estava na trip.</li>
         <li>Quem entrar depois só participa dos próximos kills.</li>
     </ol>
     <div class="rules-example">
@@ -372,14 +373,14 @@ if ($leaderName) {
                 <ul class="transfers">
                     <?php foreach ($transfers as $t): ?>
                         <li>
-                            <span class="muted"><?= $t['stage'] === 'concentrate' ? 'Concentrar:' : 'Distribuir:' ?></span>
+                            <span class="muted"><?= $t['stage'] === 'concentrate' ? 'Após vender as keys:' : 'Split do líder:' ?></span>
                             <strong><?= e($t['from']) ?></strong> paga
                             <span class="gp" title="<?= e(format_gp_full($t['amount'])) ?>"><?= format_gp($t['amount']) ?></span>
                             para <strong><?= e($t['to']) ?></strong>
                         </li>
                     <?php endforeach; ?>
                 </ul>
-                <p class="hint">1º as keys líquidas vão para o líder · 2º o líder distribui as cotas.</p>
+                <p class="hint">1º cada um vende suas keys · 2º todos enviam o gold líquido ao líder · 3º o líder faz o split.</p>
             <?php endif; ?>
         </section>
     </div>
