@@ -510,6 +510,51 @@ tbody tr:hover {
     font-weight: 600;
 }
 
+/* ---- situação por membro (resumo por membro) ---- */
+.name {
+    font-weight: 600;
+}
+
+.sub-detail {
+    display: block;
+    margin-top: 3px;
+    color: var(--muted);
+    font-size: 0.78rem;
+}
+
+.pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.pill-receive {
+    background: rgba(126, 201, 111, 0.14);
+    border: 1px solid rgba(126, 201, 111, 0.55);
+    color: var(--green);
+}
+
+.pill-pay {
+    background: rgba(224, 92, 79, 0.14);
+    border: 1px solid rgba(224, 92, 79, 0.55);
+    color: var(--red);
+}
+
+.pill-even {
+    background: rgba(145, 135, 168, 0.14);
+    border: 1px solid rgba(145, 135, 168, 0.4);
+    color: var(--muted);
+}
+
+.pill-leader {
+    background: rgba(245, 197, 66, 0.12);
+    border: 1px solid rgba(245, 197, 66, 0.5);
+    color: var(--gold);
+}
+
 /* ---- stats ---- */
 .stats {
     display: grid;

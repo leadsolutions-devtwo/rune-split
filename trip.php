@@ -361,9 +361,6 @@ if ($leaderName) {
                 <thead>
                 <tr>
                     <th>Membro</th>
-                    <th>Chaves</th>
-                    <th>Vendeu</th>
-                    <th>Cota líquida (-10%)</th>
                     <th>Situação</th>
                     <?php if ($isAdminSession && !$isClosed): ?><th></th><?php endif; ?>
                 </tr>
@@ -372,31 +369,37 @@ if ($leaderName) {
                 <?php foreach ($byMember as $mid => $info):
                     $isLeaderRow = (int)$mid === (int)($trip['leader_id'] ?? 0);
                     if (!$leaderName) {
-                        $situacao = '—';
+                        $pillClass = 'pill-even';
+                        $pillText  = '—';
                     } elseif ($isLeaderRow) {
-                        $situacao = 'segura o saldo do grupo';
+                        $pillClass = 'pill-leader';
+                        $pillText  = '👑 segura o saldo';
                     } else {
                         $memberNet = $info['collected'] - $info['fair'];
                         if ($memberNet >= 1) {
-                            $situacao = 'envia ' . format_gp($memberNet) . ' ao líder';
+                            $pillClass = 'pill-pay';
+                            $pillText  = '➡ envia ' . format_gp($memberNet);
                         } elseif ($memberNet <= -1) {
-                            $situacao = 'recebe ' . format_gp(-$memberNet) . ' do líder';
+                            $pillClass = 'pill-receive';
+                            $pillText  = '⬅ recebe ' . format_gp(-$memberNet);
                         } else {
-                            $situacao = 'quite ✅';
+                            $pillClass = 'pill-even';
+                            $pillText  = 'quite ✅';
                         }
                     }
                 ?>
                     <tr>
                         <td>
-                            <?= $isLeaderRow ? '👑 ' : '' ?><?= e($info['name']) ?>
+                            <span class="name"><?= $isLeaderRow ? '👑 ' : '' ?><?= e($info['name']) ?></span>
                             <?php if (!empty($info['joined_at'])): ?>
                                 <span class="muted joined-late" title="Entrou depois: só divide os kills a partir daí">entrou <?= e(substr($info['joined_at'], 11, 5)) ?></span>
                             <?php endif; ?>
+                            <span class="sub-detail"><?= $info['keys'] ?> chave<?= $info['keys'] === 1 ? '' : 's' ?> · vendeu <?= format_gp($info['collected']) ?></span>
                         </td>
-                        <td><?= $info['keys'] ?></td>
-                        <td class="gp" title="Valor líquido após 10% do G.E."><?= format_gp($info['collected']) ?></td>
-                        <td class="gp" title="<?= e(format_gp_full($info['fair'])) ?>"><?= format_gp($info['fair']) ?></td>
-                        <td class="muted"><?= e($situacao) ?></td>
+                        <td>
+                            <span class="pill <?= $pillClass ?>"><?= e($pillText) ?></span>
+                            <span class="sub-detail" title="<?= e(format_gp_full($info['fair'])) ?>">cota: <?= format_gp($info['fair']) ?></span>
+                        </td>
                         <?php if ($isAdminSession && !$isClosed): ?>
                         <td>
                             <form method="post" class="remove-member-form"
