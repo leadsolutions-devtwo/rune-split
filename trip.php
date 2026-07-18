@@ -134,7 +134,6 @@ foreach ($members as $m) {
         'joined_at' => $m['joined_at'],
         'keys'      => 0,
         'collected' => 0,
-        'gross_fair'=> 0.0,
         'fair'      => 0.0,
     ];
 }
@@ -161,10 +160,8 @@ foreach ($kills as $k) {
     }
     $killSplitN[$k['id']] = count($present);
 
-    $grossPer = $gross / count($present);
-    $per      = $net / count($present);
+    $per = $net / count($present);
     foreach ($present as $mid) {
-        $byMember[$mid]['gross_fair'] += $grossPer;
         $byMember[$mid]['fair'] += $per;
     }
 }
@@ -365,25 +362,41 @@ if ($leaderName) {
                 <tr>
                     <th>Membro</th>
                     <th>Chaves</th>
-                    <th>Com as keys</th>
-                    <th>Cota bruta</th>
+                    <th>Vendeu</th>
                     <th>Cota líquida (-10%)</th>
+                    <th>Situação</th>
                     <?php if ($isAdminSession && !$isClosed): ?><th></th><?php endif; ?>
                 </tr>
                 </thead>
                 <tbody>
-                <?php foreach ($byMember as $mid => $info): ?>
+                <?php foreach ($byMember as $mid => $info):
+                    $isLeaderRow = (int)$mid === (int)($trip['leader_id'] ?? 0);
+                    if (!$leaderName) {
+                        $situacao = '—';
+                    } elseif ($isLeaderRow) {
+                        $situacao = 'segura o saldo do grupo';
+                    } else {
+                        $memberNet = $info['collected'] - $info['fair'];
+                        if ($memberNet >= 1) {
+                            $situacao = 'envia ' . format_gp($memberNet) . ' ao líder';
+                        } elseif ($memberNet <= -1) {
+                            $situacao = 'recebe ' . format_gp(-$memberNet) . ' do líder';
+                        } else {
+                            $situacao = 'quite ✅';
+                        }
+                    }
+                ?>
                     <tr>
                         <td>
-                            <?= (int)$mid === (int)($trip['leader_id'] ?? 0) ? '👑 ' : '' ?><?= e($info['name']) ?>
+                            <?= $isLeaderRow ? '👑 ' : '' ?><?= e($info['name']) ?>
                             <?php if (!empty($info['joined_at'])): ?>
                                 <span class="muted joined-late" title="Entrou depois: só divide os kills a partir daí">entrou <?= e(substr($info['joined_at'], 11, 5)) ?></span>
                             <?php endif; ?>
                         </td>
                         <td><?= $info['keys'] ?></td>
                         <td class="gp" title="Valor líquido após 10% do G.E."><?= format_gp($info['collected']) ?></td>
-                        <td class="gp" title="<?= e(format_gp_full($info['gross_fair'])) ?>"><?= format_gp($info['gross_fair']) ?></td>
                         <td class="gp" title="<?= e(format_gp_full($info['fair'])) ?>"><?= format_gp($info['fair']) ?></td>
+                        <td class="muted"><?= e($situacao) ?></td>
                         <?php if ($isAdminSession && !$isClosed): ?>
                         <td>
                             <form method="post" class="remove-member-form"
