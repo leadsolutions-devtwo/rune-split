@@ -232,8 +232,8 @@ if ($leaderName) {
         <li>Registramos o valor <strong>bruto</strong> de cada key.</li>
         <li>Cada pessoa vende no G.E. os itens das <strong>próprias keys</strong>.</li>
         <li>Descontamos <strong>10% da taxa do G.E.</strong> do valor vendido.</li>
-        <li>Todos enviam o gold líquido das vendas ao <strong>líder</strong>.</li>
-        <li>O líder reúne tudo e faz o split entre quem estava na trip.</li>
+        <li>Comparamos o que cada um já vendeu com a cota dele.</li>
+        <li>Só a <strong>diferença</strong> circula: quem vendeu mais que a cota manda o excedente ao líder; quem vendeu menos recebe a diferença dele.</li>
         <li>Quem entrar depois só participa dos próximos kills.</li>
     </ol>
     <div class="rules-example">
