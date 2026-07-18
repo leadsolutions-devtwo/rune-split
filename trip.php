@@ -128,14 +128,17 @@ $geTaxRate = 0.10;
 $grossTotal = 0;
 $netTotal   = 0;
 $byMember = [];
+$killsByMember = [];
 foreach ($members as $m) {
     $byMember[$m['id']] = [
         'name'      => $m['name'],
         'joined_at' => $m['joined_at'],
         'keys'      => 0,
         'collected' => 0,
+        'gross_fair'=> 0.0,
         'fair'      => 0.0,
     ];
+    $killsByMember[$m['id']] = [];
 }
 
 $killSplitN = [];
@@ -148,6 +151,7 @@ foreach ($kills as $k) {
     $killNet[$k['id']] = $net;
     $byMember[$k['member_id']]['keys']++;
     $byMember[$k['member_id']]['collected'] += $net;
+    $killsByMember[$k['member_id']][] = $k;
 
     $present = [];
     foreach ($members as $m) {
@@ -160,8 +164,10 @@ foreach ($kills as $k) {
     }
     $killSplitN[$k['id']] = count($present);
 
-    $per = $net / count($present);
+    $grossPer = $gross / count($present);
+    $per      = $net / count($present);
     foreach ($present as $mid) {
+        $byMember[$mid]['gross_fair'] += $grossPer;
         $byMember[$mid]['fair'] += $per;
     }
 }
@@ -377,6 +383,10 @@ usort($scoreboard, fn($a, $b) => $b['collected'] <=> $a['collected']);
                 <thead>
                 <tr>
                     <th>Membro</th>
+                    <th>Chaves</th>
+                    <th>Vendeu</th>
+                    <th>Cota bruta</th>
+                    <th>Cota líquida (-10%)</th>
                     <th>Situação</th>
                     <?php if ($isAdminSession && !$isClosed): ?><th></th><?php endif; ?>
                 </tr>
@@ -403,6 +413,7 @@ usort($scoreboard, fn($a, $b) => $b['collected'] <=> $a['collected']);
                             $pillText  = 'quite ✅';
                         }
                     }
+                    $memberKills = $killsByMember[$mid];
                 ?>
                     <tr>
                         <td>
@@ -410,12 +421,27 @@ usort($scoreboard, fn($a, $b) => $b['collected'] <=> $a['collected']);
                             <?php if (!empty($info['joined_at'])): ?>
                                 <span class="muted joined-late" title="Entrou depois: só divide os kills a partir daí">entrou <?= e(substr($info['joined_at'], 11, 5)) ?></span>
                             <?php endif; ?>
-                            <span class="sub-detail"><?= $info['keys'] ?> chave<?= $info['keys'] === 1 ? '' : 's' ?> · vendeu <?= format_gp($info['collected']) ?></span>
+                            <?php if ($memberKills): ?>
+                            <details class="kill-detail">
+                                <summary>ver <?= count($memberKills) ?> key<?= count($memberKills) === 1 ? '' : 's' ?> dele(a)</summary>
+                                <ul class="kill-detail-list">
+                                    <?php foreach ($memberKills as $k): ?>
+                                        <li>
+                                            <span class="gp" title="Valor bruto"><?= format_gp((int)$k['value']) ?></span>
+                                            → <span class="gp" title="Líquido após 10% do G.E."><?= format_gp($killNet[$k['id']]) ?></span>
+                                            <span class="muted"><?= e(substr($k['created_at'], 11, 5)) ?></span>
+                                            <?php if ($k['note'] !== ''): ?><span class="muted">· <?= e($k['note']) ?></span><?php endif; ?>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </details>
+                            <?php endif; ?>
                         </td>
-                        <td>
-                            <span class="pill <?= $pillClass ?>"><?= e($pillText) ?></span>
-                            <span class="sub-detail" title="<?= e(format_gp_full($info['fair'])) ?>">cota: <?= format_gp($info['fair']) ?></span>
-                        </td>
+                        <td><?= $info['keys'] ?></td>
+                        <td class="gp" title="Valor líquido após 10% do G.E."><?= format_gp($info['collected']) ?></td>
+                        <td class="gp" title="<?= e(format_gp_full($info['gross_fair'])) ?>"><?= format_gp($info['gross_fair']) ?></td>
+                        <td class="gp" title="<?= e(format_gp_full($info['fair'])) ?>"><?= format_gp($info['fair']) ?></td>
+                        <td><span class="pill <?= $pillClass ?>"><?= e($pillText) ?></span></td>
                         <?php if ($isAdminSession && !$isClosed): ?>
                         <td>
                             <form method="post" class="remove-member-form"

@@ -515,11 +515,30 @@ tbody tr:hover {
     font-weight: 600;
 }
 
-.sub-detail {
-    display: block;
-    margin-top: 3px;
-    color: var(--muted);
+.kill-detail {
+    margin-top: 4px;
+}
+
+.kill-detail summary {
+    cursor: pointer;
+    color: var(--arcane);
     font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.kill-detail-list {
+    list-style: none;
+    margin-top: 6px;
+    padding-left: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.82rem;
+    border-left: 2px solid rgba(184, 149, 245, 0.3);
+}
+
+.kill-detail-list li {
+    padding-left: 10px;
 }
 
 .pill {
