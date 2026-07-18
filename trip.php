@@ -212,6 +212,22 @@ if ($leaderName) {
     }
 }
 
+// Placar da trip: ranking bruto de quem coletou mais/menos valor que a
+// média do grupo, tipo bolsa de valores — não tem relação com a cota justa
+// (Situação); é só quem se saiu melhor/pior coletando keys.
+$avgCollected = $n > 0 ? $netTotal / $n : 0;
+$scoreboard = [];
+foreach ($byMember as $mid => $info) {
+    $scoreboard[] = [
+        'name'      => $info['name'],
+        'is_leader' => (int)$mid === (int)($trip['leader_id'] ?? 0),
+        'keys'      => $info['keys'],
+        'collected' => $info['collected'],
+        'pct'       => $avgCollected >= 1 ? (($info['collected'] - $avgCollected) / $avgCollected * 100) : null,
+    ];
+}
+usort($scoreboard, fn($a, $b) => $b['collected'] <=> $a['collected']);
+
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -455,6 +471,45 @@ if ($leaderName) {
             <?php endif; ?>
         </section>
     </div>
+
+    <section class="card">
+        <h2>📈 Placar da trip</h2>
+        <?php if (!$kills): ?>
+            <p class="muted">Registra os kills pra ver o placar de quem coletou mais.</p>
+        <?php else: ?>
+            <table>
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Membro</th>
+                    <th>Chaves</th>
+                    <th>Coletou</th>
+                    <th>Vs. média do grupo</th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($scoreboard as $i => $s): ?>
+                    <tr>
+                        <td class="muted">#<?= $i + 1 ?></td>
+                        <td><?= $s['is_leader'] ? '👑 ' : '' ?><?= e($s['name']) ?></td>
+                        <td><?= $s['keys'] ?></td>
+                        <td class="gp" title="<?= e(format_gp_full($s['collected'])) ?>"><?= format_gp($s['collected']) ?></td>
+                        <td>
+                            <?php if ($s['pct'] === null || abs($s['pct']) < 0.05): ?>
+                                <span class="muted">— na média</span>
+                            <?php elseif ($s['pct'] > 0): ?>
+                                <span class="pos">▲ +<?= number_format($s['pct'], 1, ',', '.') ?>%</span>
+                            <?php else: ?>
+                                <span class="neg">▼ <?= number_format($s['pct'], 1, ',', '.') ?>%</span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+            <p class="hint muted">Média do grupo nessa trip: <strong class="gp"><?= format_gp($avgCollected) ?></strong> por pessoa. É só um placar de quem coletou mais ou menos — não muda o split justo (isso está na "Situação" lá em cima).</p>
+        <?php endif; ?>
+    </section>
 
     <section class="card">
         <h2>🗡️ Kills (<?= count($kills) ?>)</h2>
