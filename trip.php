@@ -2,8 +2,17 @@
 declare(strict_types=1);
 require __DIR__ . '/db.php';
 
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Lax',
+    'use_strict_mode' => true,
+]);
+
 $pdo    = db();
 $tripId = (int)($_GET['id'] ?? $_POST['trip_id'] ?? 0);
+
+// só o navegador que criou a trip é reconhecido como líder/admin dela
+$isAdminSession = !empty($_SESSION['trip_admin'][$tripId] ?? false);
 
 $stmt = $pdo->prepare('SELECT * FROM trips WHERE id = ?');
 $stmt->execute([$tripId]);
@@ -56,25 +65,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     } elseif ($action === 'remove_member') {
-        $memberId = (int)($_POST['member_id'] ?? 0);
-        $check    = $pdo->prepare('SELECT COUNT(*) FROM members WHERE id = ? AND trip_id = ?');
-        $check->execute([$memberId, $tripId]);
-        if ($check->fetchColumn()) {
-            if ((int)($trip['leader_id'] ?? 0) === $memberId) {
-                $pdo->prepare('UPDATE trips SET leader_id = NULL WHERE id = ?')->execute([$tripId]);
+        if (!$isAdminSession) {
+            $error = 'Só o líder que criou a trip pode remover membros.';
+        } else {
+            $memberId = (int)($_POST['member_id'] ?? 0);
+            $check    = $pdo->prepare('SELECT COUNT(*) FROM members WHERE id = ? AND trip_id = ?');
+            $check->execute([$memberId, $tripId]);
+            if ($check->fetchColumn()) {
+                if ((int)($trip['leader_id'] ?? 0) === $memberId) {
+                    $pdo->prepare('UPDATE trips SET leader_id = NULL WHERE id = ?')->execute([$tripId]);
+                }
+                // apaga também os kills dele(a) por causa do ON DELETE CASCADE em members
+                $pdo->prepare('DELETE FROM members WHERE id = ? AND trip_id = ?')->execute([$memberId, $tripId]);
             }
-            // apaga também os kills dele(a) por causa do ON DELETE CASCADE em members
-            $pdo->prepare('DELETE FROM members WHERE id = ? AND trip_id = ?')->execute([$memberId, $tripId]);
+            redirect('trip.php?id=' . $tripId);
         }
-        redirect('trip.php?id=' . $tripId);
     } elseif ($action === 'set_leader') {
-        $memberId = (int)($_POST['member_id'] ?? 0);
-        $check    = $pdo->prepare('SELECT COUNT(*) FROM members WHERE id = ? AND trip_id = ?');
-        $check->execute([$memberId, $tripId]);
-        if ($check->fetchColumn()) {
-            $pdo->prepare('UPDATE trips SET leader_id = ? WHERE id = ?')->execute([$memberId, $tripId]);
+        if (!$isAdminSession) {
+            $error = 'Só o líder que criou a trip pode trocar o líder.';
+        } else {
+            $memberId = (int)($_POST['member_id'] ?? 0);
+            $check    = $pdo->prepare('SELECT COUNT(*) FROM members WHERE id = ? AND trip_id = ?');
+            $check->execute([$memberId, $tripId]);
+            if ($check->fetchColumn()) {
+                $pdo->prepare('UPDATE trips SET leader_id = ? WHERE id = ?')->execute([$memberId, $tripId]);
+            }
+            redirect('trip.php?id=' . $tripId);
         }
-        redirect('trip.php?id=' . $tripId);
     } elseif ($action === 'close_trip') {
         $pdo->prepare('UPDATE trips SET closed_at = ? WHERE id = ?')
             ->execute([date('Y-m-d H:i:s'), $tripId]);
@@ -245,6 +262,7 @@ if ($leaderName) {
     <?php endif; ?>
 
     <section class="toolbar">
+        <?php if ($isAdminSession): ?>
         <form method="post" class="leader-form">
             <input type="hidden" name="action" value="set_leader">
             <input type="hidden" name="trip_id" value="<?= $tripId ?>">
@@ -262,6 +280,11 @@ if ($leaderName) {
                 </select>
             </label>
         </form>
+        <?php else: ?>
+            <span class="inline-label muted" title="Só o navegador de quem criou a trip pode trocar o líder">
+                👑 Líder: <strong><?= $leaderName ? e($leaderName) : '—' ?></strong>
+            </span>
+        <?php endif; ?>
 
         <?php if ($isClosed): ?>
             <form method="post" onsubmit="return confirm('Reabrir a trip? Vai dar pra registrar kills de novo.')">
@@ -342,7 +365,7 @@ if ($leaderName) {
                     <th>Com as keys</th>
                     <th>Cota bruta</th>
                     <th>Cota líquida (-10%)</th>
-                    <?php if (!$isClosed): ?><th></th><?php endif; ?>
+                    <?php if ($isAdminSession && !$isClosed): ?><th></th><?php endif; ?>
                 </tr>
                 </thead>
                 <tbody>
@@ -358,7 +381,7 @@ if ($leaderName) {
                         <td class="gp" title="Valor líquido após 10% do G.E."><?= format_gp($info['collected']) ?></td>
                         <td class="gp" title="<?= e(format_gp_full($info['gross_fair'])) ?>"><?= format_gp($info['gross_fair']) ?></td>
                         <td class="gp" title="<?= e(format_gp_full($info['fair'])) ?>"><?= format_gp($info['fair']) ?></td>
-                        <?php if (!$isClosed): ?>
+                        <?php if ($isAdminSession && !$isClosed): ?>
                         <td>
                             <form method="post" class="remove-member-form"
                                   data-name="<?= e($info['name']) ?>"
@@ -384,6 +407,9 @@ if ($leaderName) {
                 <button type="submit" class="btn small">+ add</button>
             </form>
             <p class="hint muted">Quem entra agora só divide os kills daqui pra frente.</p>
+            <?php endif; ?>
+            <?php if (!$isAdminSession): ?>
+            <p class="hint muted">Só o navegador de quem criou a trip pode trocar o líder ou remover membros.</p>
             <?php endif; ?>
         </section>
 

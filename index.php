@@ -71,6 +71,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $pdo->prepare('UPDATE trips SET leader_id = ? WHERE id = ?')->execute([$leaderId, $tripId]);
             $pdo->commit();
+            // navegador de quem cria a trip vira o "admin" dela: só ele troca líder/remove membro depois
+            $_SESSION['trip_admin'][$tripId] = true;
             redirect('trip.php?id=' . $tripId);
         }
     }
