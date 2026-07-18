@@ -18,7 +18,7 @@ $error    = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
-    if ($isClosed && in_array($action, ['add_kill', 'delete_kill', 'add_member'], true)) {
+    if ($isClosed && in_array($action, ['add_kill', 'delete_kill', 'add_member', 'remove_member'], true)) {
         $error = 'A trip está fechada. Só o líder reabrindo pra mexer nos kills.';
     } elseif ($action === 'add_kill') {
         $memberId = (int)($_POST['member_id'] ?? 0);
@@ -55,6 +55,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 redirect('trip.php?id=' . $tripId);
             }
         }
+    } elseif ($action === 'remove_member') {
+        $memberId = (int)($_POST['member_id'] ?? 0);
+        $check    = $pdo->prepare('SELECT COUNT(*) FROM members WHERE id = ? AND trip_id = ?');
+        $check->execute([$memberId, $tripId]);
+        if ($check->fetchColumn()) {
+            if ((int)($trip['leader_id'] ?? 0) === $memberId) {
+                $pdo->prepare('UPDATE trips SET leader_id = NULL WHERE id = ?')->execute([$tripId]);
+            }
+            // apaga também os kills dele(a) por causa do ON DELETE CASCADE em members
+            $pdo->prepare('DELETE FROM members WHERE id = ? AND trip_id = ?')->execute([$memberId, $tripId]);
+        }
+        redirect('trip.php?id=' . $tripId);
     } elseif ($action === 'set_leader') {
         $memberId = (int)($_POST['member_id'] ?? 0);
         $check    = $pdo->prepare('SELECT COUNT(*) FROM members WHERE id = ? AND trip_id = ?');
@@ -330,6 +342,7 @@ if ($leaderName) {
                     <th>Com as keys</th>
                     <th>Cota bruta</th>
                     <th>Cota líquida (-10%)</th>
+                    <?php if (!$isClosed): ?><th></th><?php endif; ?>
                 </tr>
                 </thead>
                 <tbody>
@@ -345,6 +358,19 @@ if ($leaderName) {
                         <td class="gp" title="Valor líquido após 10% do G.E."><?= format_gp($info['collected']) ?></td>
                         <td class="gp" title="<?= e(format_gp_full($info['gross_fair'])) ?>"><?= format_gp($info['gross_fair']) ?></td>
                         <td class="gp" title="<?= e(format_gp_full($info['fair'])) ?>"><?= format_gp($info['fair']) ?></td>
+                        <?php if (!$isClosed): ?>
+                        <td>
+                            <form method="post" class="remove-member-form"
+                                  data-name="<?= e($info['name']) ?>"
+                                  data-keys="<?= (int)$info['keys'] ?>"
+                                  data-leader="<?= (int)$mid === (int)($trip['leader_id'] ?? 0) ? '1' : '0' ?>">
+                                <input type="hidden" name="action" value="remove_member">
+                                <input type="hidden" name="trip_id" value="<?= $tripId ?>">
+                                <input type="hidden" name="member_id" value="<?= (int)$mid ?>">
+                                <button type="submit" class="btn danger small" title="Remover da trip">x</button>
+                            </form>
+                        </td>
+                        <?php endif; ?>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -488,6 +514,21 @@ killForm.addEventListener('submit', (ev) => {
     }
 });
 memberSel.addEventListener('change', () => memberSel.classList.remove('invalid'));
+
+document.querySelectorAll('.remove-member-form').forEach((form) => {
+    form.addEventListener('submit', (ev) => {
+        const name     = form.dataset.name;
+        const keys     = parseInt(form.dataset.keys, 10) || 0;
+        const isLeader = form.dataset.leader === '1';
+        let msg = `Remover ${name}${isLeader ? ' (líder)' : ''} da trip?`;
+        if (keys > 0) {
+            msg += ` Isso apaga ${keys} chave${keys > 1 ? 's' : ''} que ${name} registrou.`;
+        }
+        if (!confirm(msg)) {
+            ev.preventDefault();
+        }
+    });
+});
 
 const addMemberForm = document.querySelector('.inline-form');
 if (addMemberForm) {
