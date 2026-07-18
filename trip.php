@@ -187,26 +187,29 @@ if (!$uniformShare) {
     rsort($lateShares);
 }
 
-// Fluxo combinado: quem pegou a key manda o líquido ao líder; o líder distribui.
+// Fluxo combinado, mas líquido: cada um só manda/recebe a diferença entre o
+// que já coletou nas próprias keys e a cota dele — sem pagar bruto pro líder
+// e depois receber de volta (fica confuso com muitos kills desiguais).
 $transfers = [];
 if ($leaderName) {
     foreach ($byMember as $mid => $info) {
-        if ((int)$mid !== (int)($trip['leader_id'] ?? 0) && $info['collected'] >= 1) {
+        if ((int)$mid === (int)($trip['leader_id'] ?? 0)) {
+            continue;
+        }
+        $net = $info['collected'] - $info['fair'];
+        if ($net >= 1) {
             $transfers[] = [
                 'from'   => $info['name'],
                 'to'     => $leaderName,
-                'amount' => (int)round($info['collected']),
-                'stage'  => 'concentrate',
+                'amount' => (int)round($net),
+                'stage'  => 'pay',
             ];
-        }
-    }
-    foreach ($byMember as $mid => $info) {
-        if ((int)$mid !== (int)($trip['leader_id'] ?? 0) && $info['fair'] >= 1) {
+        } elseif ($net <= -1) {
             $transfers[] = [
                 'from'   => $leaderName,
                 'to'     => $info['name'],
-                'amount' => (int)round($info['fair']),
-                'stage'  => 'distribute',
+                'amount' => (int)round(-$net),
+                'stage'  => 'receive',
             ];
         }
     }
@@ -425,14 +428,14 @@ if ($leaderName) {
                 <ul class="transfers">
                     <?php foreach ($transfers as $t): ?>
                         <li>
-                            <span class="muted"><?= $t['stage'] === 'concentrate' ? 'Após vender as keys:' : 'Split do líder:' ?></span>
+                            <span class="muted"><?= $t['stage'] === 'pay' ? 'Coletou acima da cota:' : 'Coletou abaixo da cota:' ?></span>
                             <strong><?= e($t['from']) ?></strong> paga
                             <span class="gp" title="<?= e(format_gp_full($t['amount'])) ?>"><?= format_gp($t['amount']) ?></span>
                             para <strong><?= e($t['to']) ?></strong>
                         </li>
                     <?php endforeach; ?>
                 </ul>
-                <p class="hint">1º cada um vende suas keys · 2º todos enviam o gold líquido ao líder · 3º o líder faz o split.</p>
+                <p class="hint">Cada um vende suas keys · só a diferença pra cota circula: quem coletou mais que a cota manda pro líder, quem coletou menos recebe dele.</p>
             <?php endif; ?>
         </section>
     </div>
