@@ -22,12 +22,22 @@ if (!$trip) {
 }
 
 $isClosed = !empty($trip['closed_at']);
+$isLocked = !empty($trip['password_hash']) && empty($_SESSION['trip_unlocked'][$tripId] ?? false);
 $error    = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
-    if ($isClosed && in_array($action, ['add_kill', 'delete_kill', 'add_member', 'remove_member'], true)) {
+    if ($action === 'unlock_trip') {
+        $submittedPassword = (string)($_POST['password'] ?? '');
+        if ($trip['password_hash'] && password_verify($submittedPassword, $trip['password_hash'])) {
+            $_SESSION['trip_unlocked'][$tripId] = true;
+            redirect('trip.php?id=' . $tripId);
+        }
+        $error = 'Senha incorreta.';
+    } elseif ($isLocked) {
+        // trip trancada: ignora qualquer outra ação até a senha certa ser enviada
+    } elseif ($isClosed && in_array($action, ['add_kill', 'delete_kill', 'add_member', 'remove_member', 'mark_away', 'mark_back'], true)) {
         $error = 'A trip está fechada. Só o líder reabrindo pra mexer nos kills.';
     } elseif ($action === 'add_kill') {
         $memberId = (int)($_POST['member_id'] ?? 0);
@@ -80,6 +90,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             redirect('trip.php?id=' . $tripId);
         }
+    } elseif ($action === 'mark_away') {
+        $memberId = (int)($_POST['member_id'] ?? 0);
+        $check    = $pdo->prepare(
+            'SELECT COUNT(*) FROM members m
+             WHERE m.id = ? AND m.trip_id = ?
+             AND NOT EXISTS (SELECT 1 FROM member_breaks b WHERE b.member_id = m.id AND b.returned_at IS NULL)'
+        );
+        $check->execute([$memberId, $tripId]);
+        if ($check->fetchColumn()) {
+            $pdo->prepare('INSERT INTO member_breaks (member_id, left_at) VALUES (?, ?)')
+                ->execute([$memberId, date('Y-m-d H:i:s')]);
+        }
+        redirect('trip.php?id=' . $tripId);
+    } elseif ($action === 'mark_back') {
+        $memberId = (int)($_POST['member_id'] ?? 0);
+        $break    = $pdo->prepare(
+            'SELECT b.id FROM member_breaks b
+             JOIN members m ON m.id = b.member_id
+             WHERE b.member_id = ? AND m.trip_id = ? AND b.returned_at IS NULL'
+        );
+        $break->execute([$memberId, $tripId]);
+        $breakId = $break->fetchColumn();
+        if ($breakId) {
+            $pdo->prepare('UPDATE member_breaks SET returned_at = ? WHERE id = ?')
+                ->execute([date('Y-m-d H:i:s'), $breakId]);
+        }
+        redirect('trip.php?id=' . $tripId);
     } elseif ($action === 'set_leader') {
         if (!$isAdminSession) {
             $error = 'Só o líder que criou a trip pode trocar o líder.';
@@ -102,6 +139,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+if ($isLocked) {
+    ?>
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title><?= e($trip['name']) ?> — Rune Split</title>
+        <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E⚔️%3C/text%3E%3C/svg%3E">
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+    <div class="wrap">
+        <div class="credits-banner" title="o lendário criador do app 👑">✨ AGRADEÇAM AO MATHEUS WAIF ✨</div>
+        <header class="topbar">
+            <p><a href="index.php">← todas as trips</a></p>
+            <h1>🔒 <?= e($trip['name']) ?></h1>
+            <p class="sub">Essa trip é protegida por senha.</p>
+        </header>
+        <?php if ($error): ?>
+            <div class="alert"><?= e($error) ?></div>
+        <?php endif; ?>
+        <section class="card">
+            <h2>Digite a senha da trip</h2>
+            <form method="post" class="inline-form" novalidate>
+                <input type="hidden" name="action" value="unlock_trip">
+                <input type="hidden" name="trip_id" value="<?= $tripId ?>">
+                <input type="password" name="password" placeholder="Senha" autocomplete="current-password" autofocus required>
+                <button type="submit" class="btn primary">Entrar</button>
+            </form>
+        </section>
+    </div>
+    <script src="assets/fx.js" defer></script>
+    </body>
+    </html>
+    <?php
+    exit;
+}
+
 $stmt = $pdo->prepare('SELECT * FROM members WHERE trip_id = ? ORDER BY LOWER(name)');
 $stmt->execute([$tripId]);
 $members = $stmt->fetchAll();
@@ -114,6 +190,33 @@ $stmt = $pdo->prepare(
 );
 $stmt->execute([$tripId]);
 $kills = $stmt->fetchAll();
+
+$stmt = $pdo->prepare(
+    'SELECT b.* FROM member_breaks b
+     JOIN members m ON m.id = b.member_id
+     WHERE m.trip_id = ?
+     ORDER BY b.left_at'
+);
+$stmt->execute([$tripId]);
+$breaksByMember = [];
+foreach ($members as $m) {
+    $breaksByMember[$m['id']] = [];
+}
+foreach ($stmt->fetchAll() as $b) {
+    $breaksByMember[$b['member_id']][] = $b;
+}
+
+// um membro estava de folga num horário se caiu dentro de um período saiu→voltou
+// (ou saiu→agora, se ainda não voltou)
+function member_was_away(array $breaks, string $when): bool
+{
+    foreach ($breaks as $b) {
+        if ($b['left_at'] <= $when && ($b['returned_at'] === null || $when < $b['returned_at'])) {
+            return true;
+        }
+    }
+    return false;
+}
 
 $leaderName = null;
 foreach ($members as $m) {
@@ -155,7 +258,8 @@ foreach ($kills as $k) {
 
     $present = [];
     foreach ($members as $m) {
-        if (empty($m['joined_at']) || $m['joined_at'] <= $k['created_at']) {
+        $hasJoined = empty($m['joined_at']) || $m['joined_at'] <= $k['created_at'];
+        if ($hasJoined && !member_was_away($breaksByMember[$m['id']], $k['created_at'])) {
             $present[] = $m['id'];
         }
     }
@@ -413,13 +517,44 @@ usort($scoreboard, fn($a, $b) => $b['collected'] <=> $a['collected']);
                             $pillText  = 'quite ✅';
                         }
                     }
-                    $memberKills = $killsByMember[$mid];
+                    $memberKills  = $killsByMember[$mid];
+                    $memberBreaks = $breaksByMember[$mid];
+                    $lastBreak    = $memberBreaks ? end($memberBreaks) : null;
+                    $isAway       = $lastBreak && $lastBreak['returned_at'] === null;
                 ?>
                     <tr>
                         <td>
                             <span class="name"><?= $isLeaderRow ? '👑 ' : '' ?><?= e($info['name']) ?></span>
                             <?php if (!empty($info['joined_at'])): ?>
                                 <span class="muted joined-late" title="Entrou depois: só divide os kills a partir daí">entrou <?= e(substr($info['joined_at'], 11, 5)) ?></span>
+                            <?php endif; ?>
+                            <?php if ($isAway): ?>
+                                <span class="pill pill-away" title="Não divide os kills registrados enquanto estiver fora">🌙 fora desde <?= e(substr($lastBreak['left_at'], 11, 5)) ?></span>
+                            <?php endif; ?>
+                            <?php if (!$isClosed): ?>
+                            <form method="post" class="away-form">
+                                <input type="hidden" name="action" value="<?= $isAway ? 'mark_back' : 'mark_away' ?>">
+                                <input type="hidden" name="trip_id" value="<?= $tripId ?>">
+                                <input type="hidden" name="member_id" value="<?= (int)$mid ?>">
+                                <button type="submit" class="btn small"><?= $isAway ? '↩ voltou' : '🚪 saiu temporariamente' ?></button>
+                            </form>
+                            <?php endif; ?>
+                            <?php if ($memberBreaks): ?>
+                            <details class="kill-detail">
+                                <summary>histórico de saídas (<?= count($memberBreaks) ?>)</summary>
+                                <ul class="kill-detail-list">
+                                    <?php foreach ($memberBreaks as $b): ?>
+                                        <li>
+                                            saiu <?= e(substr($b['left_at'], 11, 5)) ?>
+                                            <?php if ($b['returned_at'] !== null): ?>
+                                                · voltou <?= e(substr($b['returned_at'], 11, 5)) ?>
+                                            <?php else: ?>
+                                                <span class="muted">· ainda fora</span>
+                                            <?php endif; ?>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </details>
                             <?php endif; ?>
                             <?php if ($memberKills): ?>
                             <details class="kill-detail">

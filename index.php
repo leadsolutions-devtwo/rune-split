@@ -27,9 +27,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Cada formulário só pode criar uma trip, mesmo com vários cliques simultâneos.
         unset($_SESSION['create_trip_token']);
 
-        $leader  = trim($_POST['leader'] ?? '');
-        $name    = trim($_POST['name'] ?? '');
-        $rawList = trim($_POST['members'] ?? '');
+        $leader   = trim($_POST['leader'] ?? '');
+        $name     = trim($_POST['name'] ?? '');
+        $password = (string)($_POST['password'] ?? '');
+        $rawList  = trim($_POST['members'] ?? '');
         $rawNames = array_values(array_filter(array_map('trim', preg_split('/[\r\n,]+/', $rawList))));
 
         // líder entra primeiro; remove nomes repetidos (sem diferenciar maiúsculas)
@@ -70,6 +71,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             $pdo->prepare('UPDATE trips SET leader_id = ? WHERE id = ?')->execute([$leaderId, $tripId]);
+            if ($password !== '') {
+                $pdo->prepare('UPDATE trips SET password_hash = ? WHERE id = ?')
+                    ->execute([password_hash($password, PASSWORD_DEFAULT), $tripId]);
+                // quem cria já sabe a senha, não precisa digitar de novo agora
+                $_SESSION['trip_unlocked'][$tripId] = true;
+            }
             $pdo->commit();
             // navegador de quem cria a trip vira o "admin" dela: só ele troca líder/remove membro depois
             $_SESSION['trip_admin'][$tripId] = true;
@@ -78,9 +85,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'delete_trip') {
-        $id = (int)($_POST['trip_id'] ?? 0);
-        $pdo->prepare('DELETE FROM trips WHERE id = ?')->execute([$id]);
-        redirect('index.php');
+        $id    = (int)($_POST['trip_id'] ?? 0);
+        $check = $pdo->prepare('SELECT password_hash FROM trips WHERE id = ?');
+        $check->execute([$id]);
+        $row = $check->fetch();
+        if ($row && !empty($row['password_hash']) && empty($_SESSION['trip_unlocked'][$id] ?? false)) {
+            $error = 'Essa trip tem senha. Abra ela e digite a senha antes de apagar.';
+        } else {
+            $pdo->prepare('DELETE FROM trips WHERE id = ?')->execute([$id]);
+            redirect('index.php');
+        }
     }
 }
 
@@ -90,7 +104,7 @@ if (empty($_SESSION['create_trip_token'])) {
 $createTripToken = $_SESSION['create_trip_token'];
 
 $trips = $pdo->query(
-    "SELECT t.id, t.name, t.created_at, t.closed_at,
+    "SELECT t.id, t.name, t.created_at, t.closed_at, t.password_hash,
             (SELECT m.name FROM members m WHERE m.id = t.leader_id)          AS leader_name,
             (SELECT COUNT(*) FROM members m WHERE m.trip_id = t.id)          AS member_count,
             (SELECT COUNT(*) FROM kills k  WHERE k.trip_id = t.id)          AS kill_count,
@@ -140,6 +154,12 @@ $trips = $pdo->query(
                                value="<?= e($_POST['name'] ?? '') ?>">
                         <span class="hint" id="name-hint">&nbsp;</span>
                     </label>
+                    <label>
+                        Senha da trip (opcional)
+                        <input type="password" name="password" placeholder="Deixe em branco pra trip sem senha"
+                               autocomplete="new-password">
+                        <span class="hint muted">Sem senha, qualquer um com o link acessa. Com senha, só quem souber a senha abre a trip.</span>
+                    </label>
                 </div>
                 <div class="form-col">
                     <h3>⚔️ Participantes</h3>
@@ -175,7 +195,12 @@ $trips = $pdo->query(
                 <tbody>
                 <?php foreach ($trips as $t): ?>
                     <tr>
-                        <td><a class="trip-link" href="trip.php?id=<?= (int)$t['id'] ?>"><?= e($t['name']) ?></a></td>
+                        <td>
+                            <a class="trip-link" href="trip.php?id=<?= (int)$t['id'] ?>"><?= e($t['name']) ?></a>
+                            <?php if (!empty($t['password_hash'])): ?>
+                                <span class="muted" title="Trip protegida por senha">🔒</span>
+                            <?php endif; ?>
+                        </td>
                         <td><?= $t['leader_name'] ? '👑 ' . e($t['leader_name']) : '<span class="muted">—</span>' ?></td>
                         <td>
                             <?php if ($t['closed_at']): ?>

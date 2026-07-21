@@ -40,6 +40,7 @@ function db(): PDO
                 name TEXT NOT NULL,
                 leader_id INTEGER,
                 closed_at TIMESTAMP(0),
+                password_hash TEXT,
                 created_at TIMESTAMP(0) NOT NULL DEFAULT NOW()
             )",
             "CREATE TABLE IF NOT EXISTS members (
@@ -56,6 +57,12 @@ function db(): PDO
                 note TEXT NOT NULL DEFAULT '',
                 created_at TIMESTAMP(0) NOT NULL DEFAULT NOW()
             )",
+            "CREATE TABLE IF NOT EXISTS member_breaks (
+                id SERIAL PRIMARY KEY,
+                member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+                left_at TIMESTAMP(0) NOT NULL,
+                returned_at TIMESTAMP(0)
+            )",
         ];
     } else {
         $pdo = new PDO('sqlite:' . __DIR__ . '/rune.sqlite');
@@ -69,6 +76,7 @@ function db(): PDO
                 name TEXT NOT NULL,
                 leader_id INTEGER,
                 closed_at TEXT,
+                password_hash TEXT,
                 created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
             )",
             "CREATE TABLE IF NOT EXISTS members (
@@ -85,6 +93,12 @@ function db(): PDO
                 note TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
             )",
+            "CREATE TABLE IF NOT EXISTS member_breaks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+                left_at TEXT NOT NULL,
+                returned_at TEXT
+            )",
         ];
     }
 
@@ -97,11 +111,13 @@ function db(): PDO
     if ($isPg) {
         $pdo->exec('ALTER TABLE trips ADD COLUMN IF NOT EXISTS leader_id INTEGER');
         $pdo->exec('ALTER TABLE trips ADD COLUMN IF NOT EXISTS closed_at TIMESTAMP(0)');
+        $pdo->exec('ALTER TABLE trips ADD COLUMN IF NOT EXISTS password_hash TEXT');
         $pdo->exec('ALTER TABLE members ADD COLUMN IF NOT EXISTS joined_at TIMESTAMP(0)');
     } else {
         foreach ([
             'ALTER TABLE trips ADD COLUMN leader_id INTEGER',
             'ALTER TABLE trips ADD COLUMN closed_at TEXT',
+            'ALTER TABLE trips ADD COLUMN password_hash TEXT',
             'ALTER TABLE members ADD COLUMN joined_at TEXT',
         ] as $sql) {
             try {

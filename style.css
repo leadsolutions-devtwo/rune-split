@@ -574,6 +574,20 @@ tbody tr:hover {
     color: var(--gold);
 }
 
+.pill-away {
+    display: block;
+    width: fit-content;
+    margin-top: 4px;
+    background: rgba(184, 149, 245, 0.12);
+    border: 1px solid rgba(184, 149, 245, 0.45);
+    color: var(--arcane);
+}
+
+.away-form {
+    display: inline-block;
+    margin: 4px 0;
+}
+
 /* ---- stats ---- */
 .stats {
     display: grid;
