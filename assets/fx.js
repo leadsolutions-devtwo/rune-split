@@ -1,4 +1,4 @@
-/* Efeitos de ambiente: brasas, wisps, runas flutuantes e névoa. */
+/* Efeitos de ambiente: brasas, wisps vermelhos, runas flutuantes e névoa. */
 (() => {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
         return;
@@ -33,7 +33,7 @@
         document.body.appendChild(svg);
     }
 
-    // ---- partículas: brasas douradas + wisps roxos ----
+    // ---- partículas: brasas douradas + wisps vermelhos ----
     const canvas = document.createElement('canvas');
     canvas.id = 'fx-canvas';
     document.body.appendChild(canvas);
@@ -61,7 +61,7 @@
         p.sway = Math.random() * Math.PI * 2;
         p.swaySpeed = 0.0015 + Math.random() * 0.0035;
         p.swayAmp = (12 + Math.random() * 26) * dpr;
-        p.purple = Math.random() < 0.22;
+        p.crimson = Math.random() < 0.22;
         p.alpha = 0.28 + Math.random() * 0.5;
         p.flicker = Math.random() * Math.PI * 2;
     }
@@ -87,9 +87,9 @@
             const x = p.baseX + Math.sin(p.sway) * p.swayAmp;
             const a = p.alpha * (0.7 + 0.3 * Math.sin(p.flicker));
             const g = ctx.createRadialGradient(x, p.y, 0, x, p.y, p.r * 3.2);
-            if (p.purple) {
-                g.addColorStop(0, 'rgba(190,150,255,' + a.toFixed(3) + ')');
-                g.addColorStop(1, 'rgba(120,80,200,0)');
+            if (p.crimson) {
+                g.addColorStop(0, 'rgba(255,90,90,' + a.toFixed(3) + ')');
+                g.addColorStop(1, 'rgba(200,40,40,0)');
             } else {
                 g.addColorStop(0, 'rgba(255,200,90,' + a.toFixed(3) + ')');
                 g.addColorStop(1, 'rgba(255,110,25,0)');

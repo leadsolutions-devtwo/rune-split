@@ -5,15 +5,15 @@
 }
 
 :root {
-    --bg: #0d0a14;
-    --panel: rgba(26, 20, 40, 0.86);
-    --panel-2: rgba(20, 15, 32, 0.85);
-    --border: #3d2f5c;
-    --text: #e6e0f0;
-    --muted: #9187a8;
+    --bg: #0d0707;
+    --panel: rgba(35, 15, 15, 0.86);
+    --panel-2: rgba(24, 10, 10, 0.85);
+    --border: #4a1f1f;
+    --text: #f0e4e2;
+    --muted: #a68585;
     --gold: #f5c542;
-    --arcane: #b895f5;
-    --arcane-strong: #8b5cf6;
+    --arcane: #dc2626;
+    --arcane-strong: #991b1b;
     --red: #e05c4f;
     --green: #7ec96f;
 }
@@ -48,11 +48,11 @@ body {
         z-index: 3;
         width: 250px;
         padding: 18px;
-        background: linear-gradient(145deg, rgba(28, 21, 43, 0.78), rgba(15, 11, 25, 0.68));
-        border: 1px solid rgba(184, 149, 245, 0.32);
+        background: linear-gradient(145deg, rgba(38, 14, 14, 0.78), rgba(16, 7, 7, 0.68));
+        border: 1px solid rgba(220, 38, 38, 0.32);
         border-radius: 12px;
         backdrop-filter: blur(10px);
-        box-shadow: 0 12px 38px rgba(0, 0, 0, 0.38), inset 0 0 24px rgba(139, 92, 246, 0.05);
+        box-shadow: 0 12px 38px rgba(0, 0, 0, 0.38), inset 0 0 24px rgba(220, 38, 38, 0.05);
         color: var(--muted);
         font-size: 0.82rem;
     }
@@ -121,7 +121,7 @@ a:hover {
     letter-spacing: 3px;
     text-transform: uppercase;
     margin-bottom: 18px;
-    background: linear-gradient(90deg, #f5c542, #ff8ae0, #8b5cf6, #6ee7f9, #f5c542);
+    background: linear-gradient(90deg, #f5c542, #ff6b5c, #dc2626, #ff9a3c, #f5c542);
     background-size: 300% 100%;
     -webkit-background-clip: text;
     background-clip: text;
@@ -164,7 +164,7 @@ a:hover {
         text-shadow: 0 0 14px rgba(245, 197, 66, 0.25), 0 2px 4px rgba(0, 0, 0, 0.8);
     }
     to {
-        text-shadow: 0 0 26px rgba(245, 197, 66, 0.55), 0 0 60px rgba(139, 92, 246, 0.35), 0 2px 4px rgba(0, 0, 0, 0.8);
+        text-shadow: 0 0 26px rgba(245, 197, 66, 0.55), 0 0 60px rgba(220, 38, 38, 0.35), 0 2px 4px rgba(0, 0, 0, 0.8);
     }
 }
 
@@ -182,7 +182,7 @@ a:hover {
     padding: 20px;
     margin-bottom: 20px;
     box-shadow: 0 6px 28px rgba(0, 0, 0, 0.5),
-                inset 0 0 0 1px rgba(166, 120, 240, 0.08);
+                inset 0 0 0 1px rgba(220, 38, 38, 0.08);
     animation: rise-in 0.55s ease-out backwards;
 }
 
@@ -295,7 +295,7 @@ textarea:focus,
 select:focus {
     outline: none;
     border-color: var(--arcane-strong);
-    box-shadow: 0 0 10px rgba(139, 92, 246, 0.35);
+    box-shadow: 0 0 10px rgba(220, 38, 38, 0.35);
 }
 
 .form-cols {
@@ -306,7 +306,7 @@ select:focus {
 }
 
 .form-col {
-    background: rgba(20, 15, 32, 0.5);
+    background: rgba(22, 9, 9, 0.5);
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 16px;
@@ -418,7 +418,7 @@ select:focus {
 .btn:hover {
     border-color: var(--arcane);
     transform: translateY(-1px);
-    box-shadow: 0 0 12px rgba(139, 92, 246, 0.3);
+    box-shadow: 0 0 12px rgba(220, 38, 38, 0.3);
 }
 
 .btn:disabled {
@@ -429,8 +429,8 @@ select:focus {
 }
 
 .btn.primary {
-    background: linear-gradient(160deg, #9d6ff5, #6d3fd6);
-    border-color: #8b5cf6;
+    background: linear-gradient(160deg, #e04b4b, #a31d1d);
+    border-color: #a31d1d;
     color: #fff;
     font-weight: 600;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
@@ -438,7 +438,7 @@ select:focus {
 
 .btn.primary:hover {
     filter: brightness(1.12);
-    box-shadow: 0 0 18px rgba(139, 92, 246, 0.55);
+    box-shadow: 0 0 18px rgba(220, 38, 38, 0.55);
 }
 
 .btn.danger {
@@ -475,7 +475,7 @@ th {
 
 td {
     padding: 8px 10px;
-    border-bottom: 1px solid rgba(61, 47, 92, 0.45);
+    border-bottom: 1px solid rgba(74, 31, 31, 0.45);
 }
 
 tbody tr {
@@ -483,7 +483,7 @@ tbody tr {
 }
 
 tbody tr:hover {
-    background: rgba(139, 92, 246, 0.08);
+    background: rgba(220, 38, 38, 0.08);
 }
 
 .trip-link {
@@ -534,7 +534,7 @@ tbody tr:hover {
     flex-direction: column;
     gap: 4px;
     font-size: 0.82rem;
-    border-left: 2px solid rgba(184, 149, 245, 0.3);
+    border-left: 2px solid rgba(220, 38, 38, 0.3);
 }
 
 .kill-detail-list li {
@@ -563,8 +563,8 @@ tbody tr:hover {
 }
 
 .pill-even {
-    background: rgba(145, 135, 168, 0.14);
-    border: 1px solid rgba(145, 135, 168, 0.4);
+    background: rgba(165, 133, 133, 0.14);
+    border: 1px solid rgba(165, 133, 133, 0.4);
     color: var(--muted);
 }
 
@@ -578,9 +578,9 @@ tbody tr:hover {
     display: block;
     width: fit-content;
     margin-top: 4px;
-    background: rgba(184, 149, 245, 0.12);
-    border: 1px solid rgba(184, 149, 245, 0.45);
-    color: var(--arcane);
+    background: rgba(165, 133, 133, 0.12);
+    border: 1px solid rgba(165, 133, 133, 0.45);
+    color: var(--muted);
 }
 
 .away-form {
@@ -606,7 +606,7 @@ tbody tr:hover {
     flex-direction: column;
     gap: 2px;
     box-shadow: 0 6px 28px rgba(0, 0, 0, 0.5),
-                inset 0 0 0 1px rgba(166, 120, 240, 0.08);
+                inset 0 0 0 1px rgba(220, 38, 38, 0.08);
     animation: rise-in 0.55s ease-out backwards;
 }
 
@@ -654,7 +654,7 @@ tbody tr:hover {
 }
 
 .transfers li {
-    background: rgba(42, 32, 66, 0.75);
+    background: rgba(45, 18, 18, 0.75);
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 10px 14px;
@@ -695,7 +695,7 @@ tbody tr:hover {
     bottom: -8vh;
     z-index: 1;
     pointer-events: none;
-    background: radial-gradient(ellipse at center, rgba(110, 85, 170, 0.14), rgba(110, 85, 170, 0) 70%);
+    background: radial-gradient(ellipse at center, rgba(140, 40, 40, 0.14), rgba(140, 40, 40, 0) 70%);
     filter: blur(30px);
     animation: fog-drift 90s linear infinite alternate;
 }
@@ -703,7 +703,7 @@ tbody tr:hover {
 .fx-fog-b {
     bottom: 6vh;
     height: 30vh;
-    background: radial-gradient(ellipse at center, rgba(80, 60, 130, 0.1), rgba(80, 60, 130, 0) 70%);
+    background: radial-gradient(ellipse at center, rgba(100, 30, 30, 0.1), rgba(100, 30, 30, 0) 70%);
     animation-duration: 130s;
     animation-delay: -45s;
 }
@@ -729,10 +729,10 @@ tbody tr:hover {
 
 .fx-rune path {
     fill: none;
-    stroke: #b89aff;
+    stroke: var(--red);
     stroke-width: 3;
     stroke-linecap: round;
-    filter: drop-shadow(0 0 6px rgba(160, 110, 255, 0.8));
+    filter: drop-shadow(0 0 6px rgba(224, 92, 79, 0.8));
 }
 
 @keyframes rune-rise {

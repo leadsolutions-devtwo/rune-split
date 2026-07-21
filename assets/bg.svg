@@ -54,7 +54,7 @@
     </g>
 
     <!-- runas flutuando, bem sutis -->
-    <g stroke="#8a72a8" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.14">
+    <g stroke="#8a3a3a" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.14">
         <path d="M300,170 v62 M300,170 l26,17 M300,196 l26,17"/>
         <path d="M690,235 l32,42 M722,235 l-32,42"/>
         <path d="M1045,180 v-58 M1027,140 l18,-18 l18,18"/>
@@ -103,11 +103,11 @@
 
     <!-- névoa -->
     <g filter="url(#fog)">
-        <ellipse cx="400" cy="572" rx="300" ry="38" fill="#35284a" opacity="0.22"/>
-        <ellipse cx="900" cy="588" rx="360" ry="44" fill="#2a2038" opacity="0.24"/>
-        <ellipse cx="1320" cy="575" rx="280" ry="36" fill="#35284a" opacity="0.2"/>
-        <ellipse cx="650" cy="640" rx="420" ry="50" fill="#1f1830" opacity="0.28"/>
-        <ellipse cx="1150" cy="660" rx="380" ry="46" fill="#1f1830" opacity="0.25"/>
+        <ellipse cx="400" cy="572" rx="300" ry="38" fill="#4a2020" opacity="0.22"/>
+        <ellipse cx="900" cy="588" rx="360" ry="44" fill="#381818" opacity="0.24"/>
+        <ellipse cx="1320" cy="575" rx="280" ry="36" fill="#4a2020" opacity="0.2"/>
+        <ellipse cx="650" cy="640" rx="420" ry="50" fill="#2a1212" opacity="0.28"/>
+        <ellipse cx="1150" cy="660" rx="380" ry="46" fill="#2a1212" opacity="0.25"/>
     </g>
 
     <!-- vinheta -->
