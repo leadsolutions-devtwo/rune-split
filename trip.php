@@ -136,6 +136,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'reopen_trip') {
         $pdo->prepare('UPDATE trips SET closed_at = NULL WHERE id = ?')->execute([$tripId]);
         redirect('trip.php?id=' . $tripId);
+    } elseif ($action === 'claim_admin') {
+        // trips criadas antes dessa trava existir (ou com sessão perdida) não têm
+        // navegador nenhum reconhecido como dono; qualquer um pode assumir esse papel
+        $_SESSION['trip_admin'][$tripId] = true;
+        redirect('trip.php?id=' . $tripId);
     }
 }
 
@@ -410,6 +415,11 @@ usort($scoreboard, fn($a, $b) => $b['collected'] <=> $a['collected']);
             <span class="inline-label muted" title="Só o navegador de quem criou a trip pode trocar o líder">
                 👑 Líder: <strong><?= $leaderName ? e($leaderName) : '—' ?></strong>
             </span>
+            <form method="post">
+                <input type="hidden" name="action" value="claim_admin">
+                <input type="hidden" name="trip_id" value="<?= $tripId ?>">
+                <button type="submit" class="btn small" title="Use se essa trip não reconhece nenhum navegador como dono (ex: trip antiga)">🔑 assumir controle</button>
+            </form>
         <?php endif; ?>
 
         <?php if ($isClosed): ?>
@@ -536,7 +546,7 @@ usort($scoreboard, fn($a, $b) => $b['collected'] <=> $a['collected']);
                                 <input type="hidden" name="action" value="<?= $isAway ? 'mark_back' : 'mark_away' ?>">
                                 <input type="hidden" name="trip_id" value="<?= $tripId ?>">
                                 <input type="hidden" name="member_id" value="<?= (int)$mid ?>">
-                                <button type="submit" class="btn small"><?= $isAway ? '↩ voltou' : '🚪 saiu temporariamente' ?></button>
+                                <button type="submit" class="btn tiny" title="<?= $isAway ? 'Marcar que voltou' : 'Marcar que saiu temporariamente' ?>"><?= $isAway ? '↩ voltou' : '🚪 saiu' ?></button>
                             </form>
                             <?php endif; ?>
                             <?php if ($memberBreaks): ?>
@@ -605,7 +615,7 @@ usort($scoreboard, fn($a, $b) => $b['collected'] <=> $a['collected']);
             <p class="hint muted">Quem entra agora só divide os kills daqui pra frente.</p>
             <?php endif; ?>
             <?php if (!$isAdminSession): ?>
-            <p class="hint muted">Só o navegador de quem criou a trip pode trocar o líder ou remover membros.</p>
+            <p class="hint muted">Só o navegador reconhecido como dono da trip troca o líder ou remove membros. Sem link direto? Usa o botão "🔑 assumir controle" lá em cima.</p>
             <?php endif; ?>
         </section>
 

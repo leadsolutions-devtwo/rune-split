@@ -456,6 +456,11 @@ select:focus {
     font-size: 0.8rem;
 }
 
+.btn.tiny {
+    padding: 2px 7px;
+    font-size: 0.7rem;
+}
+
 /* ---- tables ---- */
 table {
     width: 100%;
