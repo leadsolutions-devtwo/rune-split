@@ -192,6 +192,19 @@ a:hover {
     color: var(--arcane);
 }
 
+.card-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.card-header-row h2 {
+    margin-bottom: 0;
+}
+
 .alert {
     background: rgba(58, 31, 28, 0.9);
     border: 1px solid var(--red);

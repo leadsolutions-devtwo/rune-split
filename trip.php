@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Senha incorreta.';
     } elseif ($isLocked) {
         // trip trancada: ignora qualquer outra ação até a senha certa ser enviada
-    } elseif ($isClosed && in_array($action, ['add_kill', 'delete_kill', 'add_member', 'remove_member', 'mark_away', 'mark_back'], true)) {
+    } elseif ($isClosed && in_array($action, ['add_kill', 'delete_kill', 'delete_all_kills', 'add_member', 'remove_member', 'mark_away', 'mark_back'], true)) {
         $error = 'A trip está fechada. Só o líder reabrindo pra mexer nos kills.';
     } elseif ($action === 'add_kill') {
         $memberId = (int)($_POST['member_id'] ?? 0);
@@ -60,6 +60,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->prepare('DELETE FROM kills WHERE id = ? AND trip_id = ?')
             ->execute([(int)($_POST['kill_id'] ?? 0), $tripId]);
         redirect('trip.php?id=' . $tripId);
+    } elseif ($action === 'delete_all_kills') {
+        if (!$isAdminSession) {
+            $error = 'Só o líder que criou a trip pode apagar todos os kills de uma vez.';
+        } else {
+            $pdo->prepare('DELETE FROM kills WHERE trip_id = ?')->execute([$tripId]);
+            redirect('trip.php?id=' . $tripId);
+        }
     } elseif ($action === 'add_member') {
         $name = trim($_POST['name'] ?? '');
         if ($name !== '') {
@@ -683,7 +690,16 @@ usort($scoreboard, fn($a, $b) => $b['collected'] <=> $a['collected']);
     </section>
 
     <section class="card">
-        <h2>🗡️ Kills (<?= count($kills) ?>)</h2>
+        <div class="card-header-row">
+            <h2>🗡️ Kills (<?= count($kills) ?>)</h2>
+            <?php if ($isAdminSession && !$isClosed && $kills): ?>
+            <form method="post" onsubmit="return confirm('Apagar TODOS os <?= count($kills) ?> kills dessa trip? Isso não pode ser desfeito.')">
+                <input type="hidden" name="action" value="delete_all_kills">
+                <input type="hidden" name="trip_id" value="<?= $tripId ?>">
+                <button type="submit" class="btn danger small">🗑️ apagar todos</button>
+            </form>
+            <?php endif; ?>
+        </div>
         <?php if (!$kills): ?>
             <p class="muted">Nenhum kill registrado ainda.</p>
         <?php else: ?>
