@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $value    = parse_gp($_POST['value'] ?? '');
         $note     = trim($_POST['note'] ?? '');
 
-        $check = $pdo->prepare('SELECT COUNT(*) FROM members WHERE id = ? AND trip_id = ?');
+        $check = $pdo->prepare('SELECT COUNT(*) FROM members WHERE id = ? AND trip_id = ? AND removed_at IS NULL');
         $check->execute([$memberId, $tripId]);
 
         if ($value === null) {
@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'add_member') {
         $name = trim($_POST['name'] ?? '');
         if ($name !== '') {
-            $dup = $pdo->prepare('SELECT COUNT(*) FROM members WHERE trip_id = ? AND LOWER(name) = LOWER(?)');
+            $dup = $pdo->prepare('SELECT COUNT(*) FROM members WHERE trip_id = ? AND LOWER(name) = LOWER(?) AND removed_at IS NULL');
             $dup->execute([$tripId, $name]);
             if ($dup->fetchColumn()) {
                 $error = 'Já tem alguém com esse nome na trip.';
@@ -86,14 +86,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Só o líder que criou a trip pode remover membros.';
         } else {
             $memberId = (int)($_POST['member_id'] ?? 0);
-            $check    = $pdo->prepare('SELECT COUNT(*) FROM members WHERE id = ? AND trip_id = ?');
+            $check    = $pdo->prepare('SELECT COUNT(*) FROM members WHERE id = ? AND trip_id = ? AND removed_at IS NULL');
             $check->execute([$memberId, $tripId]);
             if ($check->fetchColumn()) {
                 if ((int)($trip['leader_id'] ?? 0) === $memberId) {
                     $pdo->prepare('UPDATE trips SET leader_id = NULL WHERE id = ?')->execute([$tripId]);
                 }
-                // apaga também os kills dele(a) por causa do ON DELETE CASCADE em members
-                $pdo->prepare('DELETE FROM members WHERE id = ? AND trip_id = ?')->execute([$memberId, $tripId]);
+                // saída definitiva: os kills registrados antes continuam contando pra cota
+                // dele(a) normalmente; só fica de fora dos kills registrados depois disso
+                $pdo->prepare('UPDATE members SET removed_at = ? WHERE id = ? AND trip_id = ?')
+                    ->execute([date('Y-m-d H:i:s'), $memberId, $tripId]);
             }
             redirect('trip.php?id=' . $tripId);
         }
@@ -101,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $memberId = (int)($_POST['member_id'] ?? 0);
         $check    = $pdo->prepare(
             'SELECT COUNT(*) FROM members m
-             WHERE m.id = ? AND m.trip_id = ?
+             WHERE m.id = ? AND m.trip_id = ? AND m.removed_at IS NULL
              AND NOT EXISTS (SELECT 1 FROM member_breaks b WHERE b.member_id = m.id AND b.returned_at IS NULL)'
         );
         $check->execute([$memberId, $tripId]);
@@ -115,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $break    = $pdo->prepare(
             'SELECT b.id FROM member_breaks b
              JOIN members m ON m.id = b.member_id
-             WHERE b.member_id = ? AND m.trip_id = ? AND b.returned_at IS NULL'
+             WHERE b.member_id = ? AND m.trip_id = ? AND m.removed_at IS NULL AND b.returned_at IS NULL'
         );
         $break->execute([$memberId, $tripId]);
         $breakId = $break->fetchColumn();
@@ -129,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Só o líder que criou a trip pode trocar o líder.';
         } else {
             $memberId = (int)($_POST['member_id'] ?? 0);
-            $check    = $pdo->prepare('SELECT COUNT(*) FROM members WHERE id = ? AND trip_id = ?');
+            $check    = $pdo->prepare('SELECT COUNT(*) FROM members WHERE id = ? AND trip_id = ? AND removed_at IS NULL');
             $check->execute([$memberId, $tripId]);
             if ($check->fetchColumn()) {
                 $pdo->prepare('UPDATE trips SET leader_id = ? WHERE id = ?')->execute([$memberId, $tripId]);
@@ -194,9 +196,10 @@ $stmt = $pdo->prepare('SELECT * FROM members WHERE trip_id = ? ORDER BY LOWER(na
 $stmt->execute([$tripId]);
 $members = $stmt->fetchAll();
 
-// pra busca no formulário de kill: nome (minúsculo) -> id
+// pra busca no formulário de kill e pro seletor de líder: só quem ainda está na trip
+$activeMembers  = array_values(array_filter($members, fn($m) => empty($m['removed_at'])));
 $memberNameToId = [];
-foreach ($members as $m) {
+foreach ($activeMembers as $m) {
     $memberNameToId[mb_strtolower($m['name'])] = (int)$m['id'];
 }
 
@@ -252,12 +255,13 @@ $byMember = [];
 $killsByMember = [];
 foreach ($members as $m) {
     $byMember[$m['id']] = [
-        'name'      => $m['name'],
-        'joined_at' => $m['joined_at'],
-        'keys'      => 0,
-        'collected' => 0,
-        'gross_fair'=> 0.0,
-        'fair'      => 0.0,
+        'name'       => $m['name'],
+        'joined_at'  => $m['joined_at'],
+        'removed_at' => $m['removed_at'],
+        'keys'       => 0,
+        'collected'  => 0,
+        'gross_fair' => 0.0,
+        'fair'       => 0.0,
     ];
     $killsByMember[$m['id']] = [];
 }
@@ -276,8 +280,9 @@ foreach ($kills as $k) {
 
     $present = [];
     foreach ($members as $m) {
-        $hasJoined = empty($m['joined_at']) || $m['joined_at'] <= $k['created_at'];
-        if ($hasJoined && !member_was_away($breaksByMember[$m['id']], $k['created_at'])) {
+        $hasJoined     = empty($m['joined_at']) || $m['joined_at'] <= $k['created_at'];
+        $notYetRemoved = empty($m['removed_at']) || $k['created_at'] < $m['removed_at'];
+        if ($hasJoined && $notYetRemoved && !member_was_away($breaksByMember[$m['id']], $k['created_at'])) {
             $present[] = $m['id'];
         }
     }
@@ -416,7 +421,7 @@ usort($scoreboard, fn($a, $b) => $b['collected'] <=> $a['collected']);
                     <?php if (!$leaderName): ?>
                         <option value="">— definir —</option>
                     <?php endif; ?>
-                    <?php foreach ($members as $m): ?>
+                    <?php foreach ($activeMembers as $m): ?>
                         <option value="<?= (int)$m['id'] ?>" <?= (int)$m['id'] === (int)($trip['leader_id'] ?? 0) ? 'selected' : '' ?>>
                             <?= e($m['name']) ?>
                         </option>
@@ -490,7 +495,7 @@ usort($scoreboard, fn($a, $b) => $b['collected'] <=> $a['collected']);
                 <input type="text" id="member-search-input" list="members-datalist"
                        placeholder="Digite o nome pra buscar..." autocomplete="off" required>
                 <datalist id="members-datalist">
-                    <?php foreach ($members as $m): ?>
+                    <?php foreach ($activeMembers as $m): ?>
                         <option value="<?= e($m['name']) ?>">
                     <?php endforeach; ?>
                 </datalist>
@@ -553,10 +558,12 @@ usort($scoreboard, fn($a, $b) => $b['collected'] <=> $a['collected']);
                             <?php if (!empty($info['joined_at'])): ?>
                                 <span class="muted joined-late" title="Entrou depois: só divide os kills a partir daí">entrou <?= e(substr($info['joined_at'], 11, 5)) ?></span>
                             <?php endif; ?>
-                            <?php if ($isAway): ?>
+                            <?php if (!empty($info['removed_at'])): ?>
+                                <span class="pill pill-away" title="Saiu da trip: continua contando nos kills antes disso, mas não nos de depois">🚪 saiu às <?= e(substr($info['removed_at'], 11, 5)) ?></span>
+                            <?php elseif ($isAway): ?>
                                 <span class="pill pill-away" title="Não divide os kills registrados enquanto estiver fora">🌙 fora desde <?= e(substr($lastBreak['left_at'], 11, 5)) ?></span>
                             <?php endif; ?>
-                            <?php if (!$isClosed): ?>
+                            <?php if (!$isClosed && empty($info['removed_at'])): ?>
                             <form method="post" class="away-form">
                                 <input type="hidden" name="action" value="<?= $isAway ? 'mark_back' : 'mark_away' ?>">
                                 <input type="hidden" name="trip_id" value="<?= $tripId ?>">
@@ -604,6 +611,7 @@ usort($scoreboard, fn($a, $b) => $b['collected'] <=> $a['collected']);
                         <td><span class="pill <?= $pillClass ?>"><?= e($pillText) ?></span></td>
                         <?php if ($isAdminSession && !$isClosed): ?>
                         <td>
+                            <?php if (empty($info['removed_at'])): ?>
                             <form method="post" class="remove-member-form"
                                   data-name="<?= e($info['name']) ?>"
                                   data-keys="<?= (int)$info['keys'] ?>"
@@ -613,6 +621,7 @@ usort($scoreboard, fn($a, $b) => $b['collected'] <=> $a['collected']);
                                 <input type="hidden" name="member_id" value="<?= (int)$mid ?>">
                                 <button type="submit" class="btn danger small" title="Remover da trip">x</button>
                             </form>
+                            <?php endif; ?>
                         </td>
                         <?php endif; ?>
                     </tr>
@@ -824,7 +833,7 @@ document.querySelectorAll('.remove-member-form').forEach((form) => {
         const isLeader = form.dataset.leader === '1';
         let msg = `Remover ${name}${isLeader ? ' (líder)' : ''} da trip?`;
         if (keys > 0) {
-            msg += ` Isso apaga ${keys} chave${keys > 1 ? 's' : ''} que ${name} registrou.`;
+            msg += ` As ${keys} chave${keys > 1 ? 's' : ''} que ${name} já registrou continuam valendo pro split — só os próximos kills não contam mais com ${name}.`;
         }
         if (!confirm(msg)) {
             ev.preventDefault();

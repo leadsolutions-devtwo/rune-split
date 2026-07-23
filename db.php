@@ -47,7 +47,8 @@ function db(): PDO
                 id SERIAL PRIMARY KEY,
                 trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
                 name TEXT NOT NULL,
-                joined_at TIMESTAMP(0)
+                joined_at TIMESTAMP(0),
+                removed_at TIMESTAMP(0)
             )",
             "CREATE TABLE IF NOT EXISTS kills (
                 id SERIAL PRIMARY KEY,
@@ -83,7 +84,8 @@ function db(): PDO
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
                 name TEXT NOT NULL,
-                joined_at TEXT
+                joined_at TEXT,
+                removed_at TEXT
             )",
             "CREATE TABLE IF NOT EXISTS kills (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -113,12 +115,14 @@ function db(): PDO
         $pdo->exec('ALTER TABLE trips ADD COLUMN IF NOT EXISTS closed_at TIMESTAMP(0)');
         $pdo->exec('ALTER TABLE trips ADD COLUMN IF NOT EXISTS password_hash TEXT');
         $pdo->exec('ALTER TABLE members ADD COLUMN IF NOT EXISTS joined_at TIMESTAMP(0)');
+        $pdo->exec('ALTER TABLE members ADD COLUMN IF NOT EXISTS removed_at TIMESTAMP(0)');
     } else {
         foreach ([
             'ALTER TABLE trips ADD COLUMN leader_id INTEGER',
             'ALTER TABLE trips ADD COLUMN closed_at TEXT',
             'ALTER TABLE trips ADD COLUMN password_hash TEXT',
             'ALTER TABLE members ADD COLUMN joined_at TEXT',
+            'ALTER TABLE members ADD COLUMN removed_at TEXT',
         ] as $sql) {
             try {
                 $pdo->exec($sql);
