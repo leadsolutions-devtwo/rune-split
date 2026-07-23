@@ -304,6 +304,13 @@ select {
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+input[type="checkbox"] {
+    accent-color: var(--arcane);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
 input:focus,
 textarea:focus,
 select:focus {

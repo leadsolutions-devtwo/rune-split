@@ -194,6 +194,12 @@ $stmt = $pdo->prepare('SELECT * FROM members WHERE trip_id = ? ORDER BY LOWER(na
 $stmt->execute([$tripId]);
 $members = $stmt->fetchAll();
 
+// pra busca no formulário de kill: nome (minúsculo) -> id
+$memberNameToId = [];
+foreach ($members as $m) {
+    $memberNameToId[mb_strtolower($m['name'])] = (int)$m['id'];
+}
+
 $stmt = $pdo->prepare(
     'SELECT k.*, m.name AS member_name
      FROM kills k JOIN members m ON m.id = k.member_id
@@ -481,12 +487,14 @@ usort($scoreboard, fn($a, $b) => $b['collected'] <=> $a['collected']);
             </label>
             <label>
                 Quem pegou a chave
-                <select name="member_id" required>
-                    <option value="">— escolher —</option>
+                <input type="text" id="member-search-input" list="members-datalist"
+                       placeholder="Digite o nome pra buscar..." autocomplete="off" required>
+                <datalist id="members-datalist">
                     <?php foreach ($members as $m): ?>
-                        <option value="<?= (int)$m['id'] ?>"><?= e($m['name']) ?></option>
+                        <option value="<?= e($m['name']) ?>">
                     <?php endforeach; ?>
-                </select>
+                </datalist>
+                <input type="hidden" name="member_id" id="member-id-input">
             </label>
             <label>
                 Obs (opcional)
@@ -780,8 +788,16 @@ input.addEventListener('input', () => {
 });
 
 // validação própria, sem o balão nativo do navegador
-const killForm  = document.querySelector('.kill-form');
-const memberSel = killForm.querySelector('select[name="member_id"]');
+const killForm      = document.querySelector('.kill-form');
+const memberInput   = killForm.querySelector('#member-search-input');
+const memberIdInput = killForm.querySelector('#member-id-input');
+const memberByName  = <?= json_encode($memberNameToId, JSON_UNESCAPED_UNICODE) ?>;
+
+function syncMemberId() {
+    memberIdInput.value = memberByName[memberInput.value.trim().toLowerCase()] || '';
+    memberInput.classList.remove('invalid');
+}
+memberInput.addEventListener('input', syncMemberId);
 
 killForm.addEventListener('submit', (ev) => {
     let bad = null;
@@ -791,16 +807,15 @@ killForm.addEventListener('submit', (ev) => {
         input.classList.add('invalid');
         bad = input;
     }
-    if (!memberSel.value) {
-        memberSel.classList.add('invalid');
-        if (!bad) bad = memberSel;
+    if (!memberIdInput.value) {
+        memberInput.classList.add('invalid');
+        if (!bad) bad = memberInput;
     }
     if (bad) {
         ev.preventDefault();
         bad.focus();
     }
 });
-memberSel.addEventListener('change', () => memberSel.classList.remove('invalid'));
 
 document.querySelectorAll('.remove-member-form').forEach((form) => {
     form.addEventListener('submit', (ev) => {

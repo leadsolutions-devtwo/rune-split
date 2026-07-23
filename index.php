@@ -154,12 +154,17 @@ $trips = $pdo->query(
                                value="<?= e($_POST['name'] ?? '') ?>">
                         <span class="hint" id="name-hint">&nbsp;</span>
                     </label>
-                    <label>
-                        Senha da trip (opcional)
-                        <input type="password" name="password" placeholder="Deixe em branco pra trip sem senha"
-                               autocomplete="new-password">
-                        <span class="hint muted">Sem senha, qualquer um com o link acessa. Com senha, só quem souber a senha abre a trip.</span>
+                    <label class="inline-label">
+                        <input type="checkbox" id="private-toggle">
+                        🔒 Proteger essa trip com senha
                     </label>
+                    <label id="password-label" hidden>
+                        Senha da trip
+                        <input type="password" name="password" id="password-input" placeholder="Digite uma senha"
+                               autocomplete="new-password">
+                        <span class="hint" id="password-hint">&nbsp;</span>
+                    </label>
+                    <span class="hint muted">Sem senha, qualquer um com o link acessa. Com senha, só quem souber ela abre a trip.</span>
                 </div>
                 <div class="form-col">
                     <h3>⚔️ Participantes</h3>
@@ -231,14 +236,34 @@ $trips = $pdo->query(
 // validação própria, sem o balão nativo do navegador
 const form = document.querySelector('.trip-form');
 const fields = {
-    leader:  {el: document.getElementById('leader-input'),  hint: document.getElementById('leader-hint'),  msg: '❌ informe o nome do líder'},
-    name:    {el: document.getElementById('name-input'),    hint: document.getElementById('name-hint'),    msg: '❌ dá um nome pra trip'},
-    members: {el: document.getElementById('members-input'), hint: document.getElementById('members-hint'), msg: '❌ coloca pelo menos 1 participante além de você'},
+    leader:   {el: document.getElementById('leader-input'),   hint: document.getElementById('leader-hint'),   msg: '❌ informe o nome do líder'},
+    name:     {el: document.getElementById('name-input'),     hint: document.getElementById('name-hint'),     msg: '❌ dá um nome pra trip'},
+    members:  {el: document.getElementById('members-input'),  hint: document.getElementById('members-hint'),  msg: '❌ coloca pelo menos 1 participante além de você'},
+    password: {el: document.getElementById('password-input'), hint: document.getElementById('password-hint'), msg: '❌ digite uma senha ou desmarca a opção acima'},
 };
+
+const privateToggle = document.getElementById('private-toggle');
+const passwordLabel = document.getElementById('password-label');
+
+privateToggle.addEventListener('change', () => {
+    passwordLabel.hidden = !privateToggle.checked;
+    if (privateToggle.checked) {
+        fields.password.el.focus();
+    } else {
+        fields.password.el.value = '';
+        fields.password.el.classList.remove('invalid');
+        fields.password.hint.classList.remove('err');
+        fields.password.hint.innerHTML = '&nbsp;';
+    }
+});
 
 form.addEventListener('submit', (ev) => {
     let bad = null;
-    for (const key of ['leader', 'name', 'members']) {
+    const keys = ['leader', 'name', 'members'];
+    if (privateToggle.checked) {
+        keys.push('password');
+    }
+    for (const key of keys) {
         const f = fields[key];
         const empty = key === 'members'
             ? f.el.value.split(/[\n,]+/).map(s => s.trim()).filter(Boolean).length < 1
