@@ -41,6 +41,7 @@ function db(): PDO
                 leader_id INTEGER,
                 closed_at TIMESTAMP(0),
                 password_hash TEXT,
+                api_token TEXT,
                 created_at TIMESTAMP(0) NOT NULL DEFAULT NOW()
             )",
             "CREATE TABLE IF NOT EXISTS members (
@@ -78,6 +79,7 @@ function db(): PDO
                 leader_id INTEGER,
                 closed_at TEXT,
                 password_hash TEXT,
+                api_token TEXT,
                 created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
             )",
             "CREATE TABLE IF NOT EXISTS members (
@@ -114,6 +116,7 @@ function db(): PDO
         $pdo->exec('ALTER TABLE trips ADD COLUMN IF NOT EXISTS leader_id INTEGER');
         $pdo->exec('ALTER TABLE trips ADD COLUMN IF NOT EXISTS closed_at TIMESTAMP(0)');
         $pdo->exec('ALTER TABLE trips ADD COLUMN IF NOT EXISTS password_hash TEXT');
+        $pdo->exec('ALTER TABLE trips ADD COLUMN IF NOT EXISTS api_token TEXT');
         $pdo->exec('ALTER TABLE members ADD COLUMN IF NOT EXISTS joined_at TIMESTAMP(0)');
         $pdo->exec('ALTER TABLE members ADD COLUMN IF NOT EXISTS removed_at TIMESTAMP(0)');
     } else {
@@ -121,6 +124,7 @@ function db(): PDO
             'ALTER TABLE trips ADD COLUMN leader_id INTEGER',
             'ALTER TABLE trips ADD COLUMN closed_at TEXT',
             'ALTER TABLE trips ADD COLUMN password_hash TEXT',
+            'ALTER TABLE trips ADD COLUMN api_token TEXT',
             'ALTER TABLE members ADD COLUMN joined_at TEXT',
             'ALTER TABLE members ADD COLUMN removed_at TEXT',
         ] as $sql) {

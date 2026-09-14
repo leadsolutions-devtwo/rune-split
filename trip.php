@@ -150,6 +150,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // navegador nenhum reconhecido como dono; qualquer um pode assumir esse papel
         $_SESSION['trip_admin'][$tripId] = true;
         redirect('trip.php?id=' . $tripId);
+    } elseif ($action === 'generate_api_token') {
+        if (!$isAdminSession) {
+            $error = 'Só o líder que criou a trip pode gerar o token de integração.';
+        } else {
+            $pdo->prepare('UPDATE trips SET api_token = ? WHERE id = ?')
+                ->execute([bin2hex(random_bytes(24)), $tripId]);
+            redirect('trip.php?id=' . $tripId);
+        }
     }
 }
 
@@ -454,6 +462,41 @@ usort($scoreboard, fn($a, $b) => $b['collected'] <=> $a['collected']);
             </form>
         <?php endif; ?>
     </section>
+
+    <?php if ($isAdminSession && !$isClosed): ?>
+    <section class="card">
+        <details class="kill-detail">
+            <summary>🔌 Integração automática (RuneLite)</summary>
+            <p class="hint muted">
+                Gera um link e manda pra galera da trip colar no plugin
+                <strong>Dink</strong> (RuneLite → Plugin Hub) de cada um, no campo
+                "Primary Webhook URLs", com "Enable loot" ligado. Cada drop que a pessoa
+                pegar já vira kill sozinho — só registra se o nick bater com um membro
+                já cadastrado nessa trip; nome de fora é ignorado.
+            </p>
+            <?php if (empty($trip['api_token'])): ?>
+                <form method="post">
+                    <input type="hidden" name="action" value="generate_api_token">
+                    <input type="hidden" name="trip_id" value="<?= $tripId ?>">
+                    <button type="submit" class="btn small">Gerar token</button>
+                </form>
+            <?php else:
+                $scheme     = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                $webhookUrl = $scheme . '://' . $_SERVER['HTTP_HOST'] . '/api.php?token=' . $trip['api_token'];
+            ?>
+                <div class="inline-form">
+                    <input type="text" readonly value="<?= e($webhookUrl) ?>"
+                           onclick="this.select()" style="font-family:monospace; min-width: 32ch">
+                </div>
+                <form method="post" onsubmit="return confirm('Gerar um novo token invalida o atual — o plugin vai precisar ser reconfigurado. Continuar?')">
+                    <input type="hidden" name="action" value="generate_api_token">
+                    <input type="hidden" name="trip_id" value="<?= $tripId ?>">
+                    <button type="submit" class="btn danger small">🔄 gerar novo</button>
+                </form>
+            <?php endif; ?>
+        </details>
+    </section>
+    <?php endif; ?>
 
     <section class="stats">
         <div class="stat">
